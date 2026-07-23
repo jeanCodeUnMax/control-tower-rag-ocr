@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "VisualElement": {
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "labels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Labels",
+          "type": "array"
+        },
+        "data_points": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Data Points",
+          "type": "array"
+        },
+        "asset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Asset Id"
+        },
+        "canonical_asset_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Canonical Asset Id"
+        }
+      },
+      "required": [
+        "type",
+        "description"
+      ],
+      "title": "VisualElement",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "page_number": {
+      "title": "Page Number",
+      "type": "integer"
+    },
+    "provider": {
+      "title": "Provider",
+      "type": "string"
+    },
+    "summary": {
+      "default": "",
+      "title": "Summary",
+      "type": "string"
+    },
+    "extracted_text": {
+      "default": "",
+      "title": "Extracted Text",
+      "type": "string"
+    },
+    "handwriting_text": {
+      "default": "",
+      "title": "Handwriting Text",
+      "type": "string"
+    },
+    "visual_elements": {
+      "items": {
+        "$ref": "#/$defs/VisualElement"
+      },
+      "title": "Visual Elements",
+      "type": "array"
+    },
+    "symbols": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Symbols",
+      "type": "array"
+    },
+    "pseudocode": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Pseudocode",
+      "type": "array"
+    },
+    "concepts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Concepts",
+      "type": "array"
+    },
+    "maieutic_questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Maieutic Questions",
+      "type": "array"
+    },
+    "kant_tensions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Kant Tensions",
+      "type": "array"
+    },
+    "confidence": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "needs_multimodal_review": {
+      "default": false,
+      "title": "Needs Multimodal Review",
+      "type": "boolean"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    },
+    "raw": {
+      "additionalProperties": true,
+      "title": "Raw",
+      "type": "object"
+    }
+  },
+  "required": [
+    "page_number",
+    "provider"
+  ],
+  "title": "PageAnalysis",
+  "type": "object"
+}

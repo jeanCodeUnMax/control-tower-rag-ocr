@@ -1,0 +1,41 @@
+CONTROL TOWER RAG V0.5 — VALIDATION FINALE
+Date: 2026-07-23
+
+1. Tests automatisés
+   Résultat: 30 passed
+
+2. OCR réel
+   PNG: tesseract_image — réussi
+   PDF scanné: tesseract_pdf — réussi
+
+3. PDF long synthétique
+   Pages attendues: 800
+   Pages terminées: 800
+   Pages en échec: 0
+   Pages manquantes: 0
+   Chunks bruts: 800
+   Chunks canoniques: 8
+
+4. Alternative local_fast → enrichissement
+   Page différée: 1
+   Page enrichie: 1
+   Pages restant à réviser: 0
+   Documents après enrichissement: 1
+   Recherche du texte ajouté: réussie
+   Note: provider cloud simulé, pipeline et réindexation réels.
+
+5. Contrats cloud
+   OpenRouter/Ollama OpenAI-compatible: payload image + JSON Schema testé
+   Gemini REST: image inline + responseJsonSchema testé
+   429 + retry + fallback: testés
+   Budget et circuit breaker: code validé par tests unitaires de routage/runtime
+   Appels cloud réels: non exécutés, aucune clé utilisateur fournie.
+
+6. Distribution
+   Version importée depuis wheel: 0.5.0
+   Modules présents: providers.py, provider_runtime.py, routing.py
+   SHA-256 wheel: 7f1629997b0aa7d19743dd099308d6c7e4e62f14a6b07137bc45eb7c5261c837
+
+7. Contrôles
+   Compilation Python: réussie
+   Ruff: indisponible dans le conteneur de validation

@@ -1,0 +1,186 @@
+{
+  "$defs": {
+    "PageBatch": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "page_numbers": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Page Numbers",
+          "type": "array"
+        },
+        "estimated_context_units": {
+          "title": "Estimated Context Units",
+          "type": "integer"
+        },
+        "attempt": {
+          "default": 0,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "parent_batch_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Batch Id"
+        }
+      },
+      "required": [
+        "page_numbers",
+        "estimated_context_units"
+      ],
+      "title": "PageBatch",
+      "type": "object"
+    },
+    "PageLedgerEntry": {
+      "properties": {
+        "page_number": {
+          "title": "Page Number",
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/PageState",
+          "default": "pending"
+        },
+        "attempts": {
+          "default": 0,
+          "title": "Attempts",
+          "type": "integer"
+        },
+        "batch_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Batch Ids",
+          "type": "array"
+        },
+        "extraction_method": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extraction Method"
+        },
+        "artifact_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Artifact Path"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        }
+      },
+      "required": [
+        "page_number"
+      ],
+      "title": "PageLedgerEntry",
+      "type": "object"
+    },
+    "PageState": {
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed"
+      ],
+      "title": "PageState",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "document_id": {
+      "title": "Document Id",
+      "type": "string"
+    },
+    "source_name": {
+      "title": "Source Name",
+      "type": "string"
+    },
+    "total_pages": {
+      "title": "Total Pages",
+      "type": "integer"
+    },
+    "entries": {
+      "additionalProperties": {
+        "$ref": "#/$defs/PageLedgerEntry"
+      },
+      "title": "Entries",
+      "type": "object"
+    },
+    "planned_batches": {
+      "items": {
+        "$ref": "#/$defs/PageBatch"
+      },
+      "title": "Planned Batches",
+      "type": "array"
+    },
+    "completed_batches": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Completed Batches",
+      "type": "array"
+    },
+    "failed_batches": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Failed Batches",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "schema_version": {
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "document_id",
+    "source_name",
+    "total_pages",
+    "entries"
+  ],
+  "title": "IngestionLedger",
+  "type": "object"
+}

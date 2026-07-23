@@ -1,0 +1,38 @@
+[
+  {
+    "source": "preuve_ocr.png",
+    "status": "ok",
+    "errors": [],
+    "document_id": "9ed932bd-8d1b-41b8-a017-6c13e6fa86fd",
+    "methods": [
+      "tesseract_image"
+    ],
+    "extracted_text": "CONTROLE TOUR OCR\nProjet isole et tracable\nHydratation ciblee",
+    "chunks": 1,
+    "first_chunk_source": {
+      "pages": [
+        1
+      ],
+      "method": "tesseract_image"
+    }
+  },
+  {
+    "source": "preuve_scan.pdf",
+    "status": "ok",
+    "errors": [],
+    "document_id": "103694fa-76f9-45ac-a451-67b620491d9c",
+    "methods": [
+      "tesseract_pdf"
+    ],
+    "extracted_text": "CONTROLE TOUR OCR\nProjet isole et tracable\nHydratation ciblee",
+    "chunks": 1,
+    "first_chunk_source": {
+      "pages": [
+        1
+      ],
+      "method": "tesseract_pdf"
+    }
+  }
+]
+
+PREUVE OCR: RÉUSSIE

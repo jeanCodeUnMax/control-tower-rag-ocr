@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-tower.local/schemas/knowledge-state.v1.json",
+  "title": "KnowledgeState",
+  "type": "object",
+  "required": ["node_id", "version", "status"],
+  "properties": {
+    "node_id": {"type": "string"},
+    "version": {"type": "integer", "minimum": 1},
+    "status": {"enum": ["fresh", "stale", "processing", "failed"]},
+    "depends_on": {"type": "array", "items": {"type": "string"}}
+  }
+}

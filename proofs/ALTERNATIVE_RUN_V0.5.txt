@@ -1,0 +1,21 @@
+{
+  "plan": {
+    "local": 0,
+    "cloud": 0,
+    "deferred": 1
+  },
+  "document_id": "812afba2-ae19-4f28-8fde-14de61266fd4",
+  "initial_deferred_pages": [
+    1
+  ],
+  "enrichment_status": "enriched",
+  "enriched_pages": [
+    1
+  ],
+  "remaining_review_pages": [],
+  "query_hit_count": 1,
+  "query_first_text": "Procédure hydraulique. Annotation manuscrite détectée: fermer la vanne rouge.",
+  "document_count_after_enrichment": 1,
+  "final_provider": "proof_cloud",
+  "note": "Le provider cloud est simulé; tout le cycle différé et la réindexation sont réels."
+}

@@ -1,0 +1,196 @@
+schema_version: '1.3'
+atomizer:
+  max_chars: 700
+  overlap_chars: 80
+ocr:
+  mode: auto
+  languages: fra+eng
+  dpi: 200
+  min_native_chars_per_page: 40
+  max_pages: 2000
+  psm: 6
+  oem: 3
+  grayscale: true
+  autocontrast: true
+  tesseract_cmd: null
+batching:
+  enabled: true
+  min_pages: 1
+  max_pages: 5
+  max_context_units: 18000
+  image_context_units: 2000
+  drawing_context_units: 600
+  retry_limit: 2
+  split_on_failure: true
+  strict_completeness: true
+  checkpoint_every_batch: true
+vision:
+  enabled: true
+  provider: router
+  profile: local_fast
+  model: gpt-5
+  detail: high
+  render_dpi: 144
+  api_key_env: OPENAI_API_KEY
+  timeout_seconds: 120
+  require_provider_success: false
+  include_native_text_in_prompt: true
+  max_workers: 5
+  max_cost_per_document_usd: 15.0
+  stop_on_budget_exceeded: false
+  defer_complex_pages_in_fast_mode: true
+  provider_order:
+  - ollama_local
+  - openrouter_qwen
+  - openrouter_gemini_flash
+  - gemini_direct
+  - ollama_cloud
+  providers:
+  - name: ollama_local
+    kind: openai_compatible
+    enabled: false
+    model: qwen3-vl:4b
+    base_url: http://localhost:11434/v1
+    api_key_env: null
+    allow_missing_api_key: true
+    max_concurrency: 1
+    requests_per_minute: 120
+    timeout_seconds: 120
+    max_retries: 4
+    backoff_base_seconds: 0.5
+    backoff_max_seconds: 20.0
+    circuit_breaker_failures: 5
+    circuit_breaker_cooldown_seconds: 60
+    estimated_cost_per_page_usd: 0.0
+    strict_json_schema: false
+    headers: {}
+    provider_options: {}
+  - name: openrouter_qwen
+    kind: openai_compatible
+    enabled: false
+    model: qwen/qwen3-vl-32b-instruct
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    allow_missing_api_key: false
+    max_concurrency: 12
+    requests_per_minute: 240
+    timeout_seconds: 120
+    max_retries: 4
+    backoff_base_seconds: 0.5
+    backoff_max_seconds: 20.0
+    circuit_breaker_failures: 5
+    circuit_breaker_cooldown_seconds: 60
+    estimated_cost_per_page_usd: 0.002
+    strict_json_schema: true
+    headers: {}
+    provider_options:
+      sort: throughput
+      allow_fallbacks: true
+      require_parameters: true
+      data_collection: deny
+  - name: openrouter_gemini_flash
+    kind: openai_compatible
+    enabled: false
+    model: ~google/gemini-flash-latest
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+    allow_missing_api_key: false
+    max_concurrency: 12
+    requests_per_minute: 240
+    timeout_seconds: 120
+    max_retries: 4
+    backoff_base_seconds: 0.5
+    backoff_max_seconds: 20.0
+    circuit_breaker_failures: 5
+    circuit_breaker_cooldown_seconds: 60
+    estimated_cost_per_page_usd: 0.004
+    strict_json_schema: true
+    headers: {}
+    provider_options:
+      sort: throughput
+      allow_fallbacks: true
+      require_parameters: true
+      data_collection: deny
+  - name: gemini_direct
+    kind: gemini
+    enabled: false
+    model: gemini-3.6-flash
+    base_url: https://generativelanguage.googleapis.com/v1beta
+    api_key_env: GEMINI_API_KEY
+    allow_missing_api_key: false
+    max_concurrency: 8
+    requests_per_minute: 120
+    timeout_seconds: 120
+    max_retries: 4
+    backoff_base_seconds: 0.5
+    backoff_max_seconds: 20.0
+    circuit_breaker_failures: 5
+    circuit_breaker_cooldown_seconds: 60
+    estimated_cost_per_page_usd: 0.006
+    strict_json_schema: true
+    headers: {}
+    provider_options: {}
+  - name: ollama_cloud
+    kind: openai_compatible
+    enabled: false
+    model: qwen3-vl:32b-cloud
+    base_url: https://ollama.com/v1
+    api_key_env: OLLAMA_API_KEY
+    allow_missing_api_key: false
+    max_concurrency: 3
+    requests_per_minute: 60
+    timeout_seconds: 120
+    max_retries: 4
+    backoff_base_seconds: 0.5
+    backoff_max_seconds: 20.0
+    circuit_breaker_failures: 5
+    circuit_breaker_cooldown_seconds: 60
+    estimated_cost_per_page_usd: 0.0
+    strict_json_schema: false
+    headers: {}
+    provider_options: {}
+consolidation:
+  enabled: true
+  exact_text: true
+  near_text: true
+  semantic_embeddings: false
+  embedding_model: text-embedding-3-small
+  embedding_api_key_env: OPENAI_API_KEY
+  near_duplicate_threshold: 0.93
+  semantic_duplicate_threshold: 0.96
+  minimum_text_chars: 40
+  image_deduplication: true
+  image_phash_distance: 6
+  vector_drawing_deduplication: true
+  canonical_policy: first
+retrieval:
+  top_k: 5
+  hydration_budget_chars: 3000
+  canonical_only: true
+features:
+  pseudocode: true
+  maieutic: true
+  kant_glove: true
+  consensusless: false
+  background_consolidation: false
+policy:
+  mode: enforce
+  max_ingest_bytes: 500000000
+  blocked_extensions:
+  - .exe
+  - .dll
+  - .bat
+  - .cmd
+  - .sh
+  - .ps1
+  allowed_extensions:
+  - .txt
+  - .md
+  - .pdf
+  - .png
+  - .jpg
+  - .jpeg
+  - .tif
+  - .tiff
+  - .bmp
+  - .webp

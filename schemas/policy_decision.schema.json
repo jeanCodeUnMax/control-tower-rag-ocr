@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-tower.local/schemas/policy-decision.v1.json",
+  "title": "PolicyDecision",
+  "type": "object",
+  "required": ["effect", "rule_id", "reason"],
+  "properties": {
+    "effect": {"enum": ["allow", "deny", "review"]},
+    "rule_id": {"type": "string"},
+    "reason": {"type": "string"},
+    "obligations": {"type": "array", "items": {"type": "string"}}
+  }
+}

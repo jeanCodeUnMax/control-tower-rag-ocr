@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "AssetKind": {
+      "enum": [
+        "embedded_image",
+        "vector_drawing"
+      ],
+      "title": "AssetKind",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "document_id": {
+      "title": "Document Id",
+      "type": "string"
+    },
+    "page_number": {
+      "title": "Page Number",
+      "type": "integer"
+    },
+    "kind": {
+      "$ref": "#/$defs/AssetKind"
+    },
+    "exact_hash": {
+      "title": "Exact Hash",
+      "type": "string"
+    },
+    "perceptual_hash": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Perceptual Hash"
+    },
+    "canonical_asset_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Canonical Asset Id"
+    },
+    "duplicate_kind": {
+      "default": "canonical",
+      "title": "Duplicate Kind",
+      "type": "string"
+    },
+    "duplicate_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duplicate Score"
+    },
+    "file_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "File Path"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "document_id",
+    "page_number",
+    "kind",
+    "exact_hash"
+  ],
+  "title": "VisualAsset",
+  "type": "object"
+}

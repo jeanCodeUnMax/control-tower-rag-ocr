@@ -1,0 +1,6 @@
+template_id: reasoning.maieutic.v1
+questions:
+  - Quelle hypothèse implicite soutient cette affirmation ?
+  - Quelle information manque pour la vérifier ?
+  - Quel contre-exemple pourrait l'affaiblir ?
+  - Quels termes sont ambigus ?

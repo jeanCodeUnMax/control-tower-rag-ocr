@@ -1,0 +1,7 @@
+template_id: reasoning.kant_glove.v1
+lenses:
+  - facts_vs_interpretations
+  - means_vs_ends
+  - causation_vs_correlation
+  - universalization
+  - internal_contradictions
