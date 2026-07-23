@@ -14,6 +14,7 @@ class AtomizerConfig(BaseModel):
 
 
 class OCRConfig(BaseModel):
+    engine: str = Field(default="tesseract", pattern="^(tesseract|paddle)$")
     mode: str = Field(default="auto", pattern="^(auto|text_only|force_ocr)$")
     languages: str = "fra+eng"
     dpi: int = Field(default=200, ge=72, le=600)
@@ -24,6 +25,8 @@ class OCRConfig(BaseModel):
     grayscale: bool = True
     autocontrast: bool = True
     tesseract_cmd: str | None = None
+    paddle_lang: str = "fr"
+    paddle_use_gpu: bool = False
 
 
 class BatchConfig(BaseModel):
@@ -229,8 +232,21 @@ class PolicyConfig(BaseModel):
     )
 
 
+class EmbeddingsConfig(BaseModel):
+    provider: str = Field(default="local", pattern="^(local|gemini|openrouter|mistral)$")
+    model: str = "all-MiniLM-L6-v2"
+    api_key_env: str | None = None
+
+
+class VectorStoreConfig(BaseModel):
+    engine: str = Field(default="qdrant", pattern="^(qdrant|chroma)$")
+    url: str = "http://localhost:6333"
+    api_key_env: str | None = None
+    collection_name: str = "control_tower_chunks"
+
+
 class ProjectConfig(BaseModel):
-    schema_version: str = "1.3"
+    schema_version: str = "1.4"
     atomizer: AtomizerConfig = Field(default_factory=AtomizerConfig)
     ocr: OCRConfig = Field(default_factory=OCRConfig)
     batching: BatchConfig = Field(default_factory=BatchConfig)
@@ -239,6 +255,8 @@ class ProjectConfig(BaseModel):
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
     features: FeatureConfig = Field(default_factory=FeatureConfig)
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
+    embeddings: EmbeddingsConfig = Field(default_factory=EmbeddingsConfig)
+    vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
 
 
 class RuntimeSettings(BaseModel):

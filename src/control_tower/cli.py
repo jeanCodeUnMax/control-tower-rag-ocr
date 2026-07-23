@@ -110,5 +110,13 @@ def inspect_document(
     output(ControlTowerService().inspect_document(project, document_id))
 
 
+@app.command("vectorize")
+def vectorize(
+    project: str = typer.Option(..., "--project", "-p"),
+) -> None:
+    """Génère les embeddings pour les chunks non vectorisés et les insère dans le Vector Store."""
+    output(ControlTowerService().vectorize_project(project))
+
+
 if __name__ == "__main__":
     app()

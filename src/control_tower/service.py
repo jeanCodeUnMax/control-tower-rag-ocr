@@ -507,3 +507,59 @@ class ControlTowerService:
             "store": store.stats(),
             "capabilities": [capability.__dict__ for capability in self.registry.list()],
         }
+
+    def vectorize_project(self, project_id: str) -> dict:
+        """Génère les embeddings et les insère dans le Vector Store."""
+        self.workspace.require(project_id)
+        config = self.workspace.load_config(project_id)
+        project_path = self.workspace.path_for(project_id)
+        
+        from control_tower.semantics.embeddings import get_embedding_provider
+        from control_tower.storage.vector import QdrantVectorStore
+        
+        # Initialiser le provider d'embeddings
+        embedder = get_embedding_provider(
+            provider_type=config.embeddings.provider,
+            model_name=config.embeddings.model
+        )
+        
+        # Initialiser le store vectoriel
+        if config.vector_store.engine == "qdrant":
+            vector_store = QdrantVectorStore(url=config.vector_store.url)
+        else:
+            raise ValueError(f"Moteur vectoriel non supporté: {config.vector_store.engine}")
+            
+        store = SQLiteStore(project_path / "state" / "knowledge.db")
+        
+        # Récupérer tous les chunks du SQLite
+        chunks = store.all_chunks()
+        
+        if not chunks:
+            return {"status": "no_chunks_found"}
+            
+        # Pour faire simple dans la V1 : on re-vectorise tout
+        # L'idéal serait de flagger les chunks déjà vectorisés.
+        texts_to_embed = [chunk.text for chunk in chunks]
+        
+        # TODO: Batching selon les limites de l'API/Provider
+        vectors = embedder.embed_batch(texts_to_embed)
+        
+        upserted_count = 0
+        for chunk, vector in zip(chunks, vectors):
+            payload = chunk.model_dump(mode="json")
+            vector_store.upsert(
+                collection_name=config.vector_store.collection_name,
+                point_id=chunk.id,
+                vector=vector,
+                payload=payload
+            )
+            upserted_count += 1
+            
+        return {
+            "project_id": project_id,
+            "status": "vectorized",
+            "chunks_processed": len(chunks),
+            "vectors_upserted": upserted_count,
+            "dimension": embedder.dimension,
+            "vector_store": config.vector_store.engine
+        }

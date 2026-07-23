@@ -14,6 +14,8 @@ class ExtractionMethod(StrEnum):
     TESSERACT_IMAGE = "tesseract_image"
 
 
+from control_tower.ocr.layout import LayoutBlock
+
 class ExtractedPage(BaseModel):
     page_number: int = Field(ge=1)
     text: str
@@ -22,6 +24,7 @@ class ExtractedPage(BaseModel):
     height: int | None = None
     warnings: list[str] = Field(default_factory=list)
     supplemental_methods: list[str] = Field(default_factory=list)
+    blocks: list[LayoutBlock] = Field(default_factory=list)
 
     @computed_field
     @property

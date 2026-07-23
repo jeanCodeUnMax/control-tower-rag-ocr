@@ -116,20 +116,21 @@ class PDFOCRProvider:
                     continue
 
                 try:
-                    ocr_text, width, height = self._ocr_page(page, config)
+                    ocr_text, blocks, width, height = self._ocr_page_structured(page, config)
                     page_warnings: list[str] = []
                     if not ocr_text:
-                        message = f"Page {page_number}: Tesseract n'a détecté aucun texte."
+                        message = f"Page {page_number}: L'OCR n'a détecté aucun texte."
                         warnings.append(message)
                         page_warnings.append(message)
                     pages.append(
                         ExtractedPage(
                             page_number=page_number,
                             text=ocr_text,
-                            method=ExtractionMethod.TESSERACT_PDF,
+                            method=ExtractionMethod.TESSERACT_PDF if getattr(config, "engine", "tesseract") == "tesseract" else ExtractionMethod.TESSERACT_IMAGE,
                             width=width,
                             height=height,
                             warnings=page_warnings,
+                            blocks=blocks,
                         )
                     )
                 except RuntimeError as exc:
@@ -178,15 +179,30 @@ class PDFOCRProvider:
         compact = "".join(native_text.split())
         return len(compact) >= config.min_native_chars_per_page
 
-    def _ocr_page(self, page: fitz.Page, config: OCRConfig) -> tuple[str, int, int]:
+    def _ocr_page_structured(self, page: fitz.Page, config: OCRConfig) -> tuple[str, list["LayoutBlock"], int, int]:
+        from control_tower.ocr.layout import LayoutBlock
+        
         zoom = config.dpi / 72
         pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
         image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
         prepared = prepare_image(image, config)
-        engine = self.engine or TesseractEngine(resolve_tesseract_executable(config))
-        text = engine.image_to_string(
-            prepared,
-            lang=config.languages,
-            config=tesseract_config(config),
-        ).strip()
-        return text, prepared.width, prepared.height
+        
+        # Choix du moteur OCR
+        if getattr(config, "engine", "tesseract") == "paddle":
+            from control_tower.ocr.paddle_engine import PaddleOCREngine
+            engine = self.engine or PaddleOCREngine(
+                lang=getattr(config, "paddle_lang", "fr"),
+                use_gpu=getattr(config, "paddle_use_gpu", False)
+            )
+            # PaddleOCR via extract_structured
+            blocks = engine.extract_structured(prepared, lang="", config="")
+        else:
+            engine = self.engine or TesseractEngine(resolve_tesseract_executable(config))
+            blocks = engine.extract_structured(
+                prepared,
+                lang=config.languages,
+                config=tesseract_config(config),
+            )
+            
+        text = "\n".join(b.text for b in blocks if b.text).strip()
+        return text, blocks, prepared.width, prepared.height

@@ -27,6 +27,19 @@ class FakeOCREngine:
         self.calls += 1
         return self.text
 
+    def extract_structured(self, image: Image.Image, *, lang: str, config: str) -> list["LayoutBlock"]:
+        assert image.width > 0
+        self.calls += 1
+        from control_tower.ocr.layout import LayoutBlock, BoundingBox
+        return [
+            LayoutBlock(
+                type="text",
+                text=self.text,
+                box=BoundingBox(x0=0, y0=0, x1=image.width, y1=image.height),
+                confidence=0.99
+            )
+        ]
+
 
 def make_native_pdf(path: Path) -> None:
     document = fitz.open()

@@ -28,12 +28,13 @@ class ImageOCRProvider:
         with Image.open(source) as image:
             prepared = prepare_image(image, config)
             engine = self.engine or TesseractEngine(resolve_tesseract_executable(config))
-            text = engine.image_to_string(
+            blocks = engine.extract_structured(
                 prepared,
                 lang=config.languages,
                 config=tesseract_config(config),
-            ).strip()
-            warning = [] if text else ["Tesseract n'a détecté aucun texte dans l'image."]
+            )
+            text = "\n".join(b.text for b in blocks if b.text).strip()
+            warning = [] if text else ["L'OCR n'a détecté aucun texte dans l'image."]
             page = ExtractedPage(
                 page_number=1,
                 text=text,
@@ -41,6 +42,7 @@ class ImageOCRProvider:
                 width=prepared.width,
                 height=prepared.height,
                 warnings=warning,
+                blocks=blocks,
             )
         return ExtractionResult(
             source_path=str(source),
