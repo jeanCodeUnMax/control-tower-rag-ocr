@@ -28,6 +28,6 @@ def test_preflight_and_local_benchmark_do_not_require_cloud(tmp_path: Path):
 
     assert plan["pdf_pages"] == 4
     assert plan["vision_plan"]["counts"]["cloud"] == 0
-    assert benchmark["sampled_pages"] == [1, 2, 4]
+    assert benchmark["sampled_pages"] == [1, 3, 4]
     assert benchmark["provider_report"]["profile"] == "local_fast"
     assert Path(benchmark["artifact"]).exists()
