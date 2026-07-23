@@ -115,22 +115,37 @@ class PDFOCRProvider:
                     )
                     continue
 
-                ocr_text, width, height = self._ocr_page(page, config)
-                page_warnings: list[str] = []
-                if not ocr_text:
-                    message = f"Page {page_number}: Tesseract n'a détecté aucun texte."
-                    warnings.append(message)
-                    page_warnings.append(message)
-                pages.append(
-                    ExtractedPage(
-                        page_number=page_number,
-                        text=ocr_text,
-                        method=ExtractionMethod.TESSERACT_PDF,
-                        width=width,
-                        height=height,
-                        warnings=page_warnings,
+                try:
+                    ocr_text, width, height = self._ocr_page(page, config)
+                    page_warnings: list[str] = []
+                    if not ocr_text:
+                        message = f"Page {page_number}: Tesseract n'a détecté aucun texte."
+                        warnings.append(message)
+                        page_warnings.append(message)
+                    pages.append(
+                        ExtractedPage(
+                            page_number=page_number,
+                            text=ocr_text,
+                            method=ExtractionMethod.TESSERACT_PDF,
+                            width=width,
+                            height=height,
+                            warnings=page_warnings,
+                        )
                     )
-                )
+                except RuntimeError as exc:
+                    if native_text:
+                        message = f"Page {page_number}: Tesseract indisponible ({exc}), bascule sur le texte natif."
+                        warnings.append(message)
+                        pages.append(
+                            ExtractedPage(
+                                page_number=page_number,
+                                text=native_text,
+                                method=ExtractionMethod.NATIVE_PDF,
+                                warnings=[message],
+                            )
+                        )
+                    else:
+                        raise
             return ExtractionResult(
                 source_path=str(source),
                 source_type="pdf",

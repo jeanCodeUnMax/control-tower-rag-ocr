@@ -9,7 +9,10 @@ def make_pdf(path: Path) -> None:
     document = fitz.open()
     for number in range(1, 5):
         page = document.new_page()
-        page.insert_text((50, 80), f"Page {number}. Procédure de maintenance et contrôle.")
+        page.insert_text(
+            (50, 80),
+            f"Page {number}. Procédure de maintenance et contrôle de la tour de contrôle RAG OCR.",
+        )
     document.save(path)
     document.close()
 
