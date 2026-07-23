@@ -1,0 +1,12 @@
+services:
+  control-tower:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      CONTROL_TOWER_HOME: /data
+    volumes:
+      - ./runtime-data:/data
+    restart: unless-stopped

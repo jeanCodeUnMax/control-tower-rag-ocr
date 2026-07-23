@@ -1,0 +1,197 @@
+{
+  "$defs": {
+    "DuplicateKind": {
+      "enum": [
+        "canonical",
+        "exact_duplicate",
+        "near_duplicate",
+        "semantic_duplicate"
+      ],
+      "title": "DuplicateKind",
+      "type": "string"
+    },
+    "EvidenceOccurrence": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "chunk_id": {
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "source_pages": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Source Pages",
+          "type": "array"
+        },
+        "duplicate_kind": {
+          "$ref": "#/$defs/DuplicateKind",
+          "default": "canonical"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Score"
+        }
+      },
+      "required": [
+        "document_id",
+        "chunk_id"
+      ],
+      "title": "EvidenceOccurrence",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "document_id": {
+      "title": "Document Id",
+      "type": "string"
+    },
+    "ordinal": {
+      "title": "Ordinal",
+      "type": "integer"
+    },
+    "text": {
+      "title": "Text",
+      "type": "string"
+    },
+    "content_hash": {
+      "title": "Content Hash",
+      "type": "string"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "concepts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Concepts",
+      "type": "array"
+    },
+    "pseudocode": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Pseudocode",
+      "type": "array"
+    },
+    "questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Questions",
+      "type": "array"
+    },
+    "tensions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tensions",
+      "type": "array"
+    },
+    "source_pages": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Source Pages",
+      "type": "array"
+    },
+    "extraction_method": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Extraction Method"
+    },
+    "visual_asset_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Visual Asset Ids",
+      "type": "array"
+    },
+    "duplicate_kind": {
+      "$ref": "#/$defs/DuplicateKind",
+      "default": "canonical"
+    },
+    "canonical_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Canonical Id"
+    },
+    "duplicate_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Duplicate Score"
+    },
+    "indexable": {
+      "default": true,
+      "title": "Indexable",
+      "type": "boolean"
+    },
+    "evidence_occurrences": {
+      "items": {
+        "$ref": "#/$defs/EvidenceOccurrence"
+      },
+      "title": "Evidence Occurrences",
+      "type": "array"
+    },
+    "schema_version": {
+      "default": "1.2",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "project_id",
+    "document_id",
+    "ordinal",
+    "text",
+    "content_hash"
+  ],
+  "title": "AtomicChunk",
+  "type": "object"
+}

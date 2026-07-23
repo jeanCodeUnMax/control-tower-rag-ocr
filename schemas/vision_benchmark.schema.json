@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vision_benchmark.schema.json",
+  "title": "Vision Benchmark",
+  "type": "object",
+  "required": ["benchmark_id", "project_id", "profile", "sampled_pages", "elapsed_seconds", "provider_report"],
+  "properties": {
+    "benchmark_id": {"type": "string"},
+    "project_id": {"type": "string"},
+    "profile": {"type": "string"},
+    "sampled_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+    "elapsed_seconds": {"type": "number", "minimum": 0},
+    "pages_per_minute": {"type": ["number", "null"]},
+    "estimated_800_page_minutes": {"type": ["number", "null"]},
+    "analyses": {"type": "array", "items": {"type": "object"}},
+    "provider_report": {"type": "object"}
+  },
+  "additionalProperties": true
+}

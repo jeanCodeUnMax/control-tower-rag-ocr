@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "ExtractedPage": {
+      "properties": {
+        "page_number": {
+          "minimum": 1,
+          "title": "Page Number",
+          "type": "integer"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "method": {
+          "$ref": "#/$defs/ExtractionMethod"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Width"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Height"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        },
+        "supplemental_methods": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Supplemental Methods",
+          "type": "array"
+        }
+      },
+      "required": [
+        "page_number",
+        "text",
+        "method"
+      ],
+      "title": "ExtractedPage",
+      "type": "object"
+    },
+    "ExtractionMethod": {
+      "enum": [
+        "text",
+        "native_pdf",
+        "tesseract_pdf",
+        "tesseract_image"
+      ],
+      "title": "ExtractionMethod",
+      "type": "string"
+    }
+  },
+  "properties": {
+    "source_path": {
+      "title": "Source Path",
+      "type": "string"
+    },
+    "source_type": {
+      "title": "Source Type",
+      "type": "string"
+    },
+    "pages": {
+      "items": {
+        "$ref": "#/$defs/ExtractedPage"
+      },
+      "title": "Pages",
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    },
+    "contract_version": {
+      "default": "1.0",
+      "title": "Contract Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_path",
+    "source_type",
+    "pages"
+  ],
+  "title": "ExtractionResult",
+  "type": "object"
+}

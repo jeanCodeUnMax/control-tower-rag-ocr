@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "provider_report.schema.json",
+  "title": "Provider Report",
+  "type": "object",
+  "required": ["profile", "deferred_pages", "routes", "providers", "budget"],
+  "properties": {
+    "profile": {"type": "string"},
+    "provider_order": {"type": "array", "items": {"type": "string"}},
+    "configured_provider_count": {"type": "integer", "minimum": 0},
+    "deferred_pages": {"type": "array", "items": {"type": "integer", "minimum": 1}},
+    "routes": {"type": "object"},
+    "providers": {"type": "array", "items": {"type": "object"}},
+    "budget": {
+      "type": "object",
+      "required": ["maximum_usd", "estimated_spent_usd"],
+      "properties": {
+        "maximum_usd": {"type": "number", "minimum": 0},
+        "estimated_spent_usd": {"type": "number", "minimum": 0},
+        "remaining_usd": {"type": "number", "minimum": 0}
+      }
+    }
+  },
+  "additionalProperties": true
+}

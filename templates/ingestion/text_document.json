@@ -1,0 +1,13 @@
+{
+  "template_id": "ingestion.text_document.v1",
+  "accepted_extensions": [".txt", ".md"],
+  "steps": [
+    "policy.check",
+    "ocr.extract",
+    "atomizer.split",
+    "semantics.enrich",
+    "storage.persist",
+    "state.refresh"
+  ],
+  "required_outputs": ["document", "chunks", "event_log"]
+}

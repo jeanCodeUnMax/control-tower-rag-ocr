@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://control-tower.local/schemas/module-result.v1.json",
+  "title": "ModuleResult",
+  "type": "object",
+  "required": ["status", "module", "trace_id", "contract_version"],
+  "properties": {
+    "status": {"enum": ["ok", "error", "partial", "blocked"]},
+    "module": {"type": "string"},
+    "trace_id": {"type": "string"},
+    "data": {},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "metrics": {"type": "object"},
+    "contract_version": {"const": "1.0"}
+  }
+}

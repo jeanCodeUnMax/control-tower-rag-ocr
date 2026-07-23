@@ -1,0 +1,60 @@
+{
+  "properties": {
+    "raw_chunks": {
+      "title": "Raw Chunks",
+      "type": "integer"
+    },
+    "canonical_chunks": {
+      "title": "Canonical Chunks",
+      "type": "integer"
+    },
+    "exact_duplicates": {
+      "title": "Exact Duplicates",
+      "type": "integer"
+    },
+    "near_duplicates": {
+      "title": "Near Duplicates",
+      "type": "integer"
+    },
+    "semantic_duplicates": {
+      "title": "Semantic Duplicates",
+      "type": "integer"
+    },
+    "raw_assets": {
+      "title": "Raw Assets",
+      "type": "integer"
+    },
+    "canonical_assets": {
+      "title": "Canonical Assets",
+      "type": "integer"
+    },
+    "duplicate_assets": {
+      "title": "Duplicate Assets",
+      "type": "integer"
+    },
+    "semantic_stage": {
+      "title": "Semantic Stage",
+      "type": "string"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "raw_chunks",
+    "canonical_chunks",
+    "exact_duplicates",
+    "near_duplicates",
+    "semantic_duplicates",
+    "raw_assets",
+    "canonical_assets",
+    "duplicate_assets",
+    "semantic_stage"
+  ],
+  "title": "ConsolidationReport",
+  "type": "object"
+}
