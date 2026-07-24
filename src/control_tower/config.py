@@ -232,6 +232,76 @@ class PolicyConfig(BaseModel):
     )
 
 
+class LLMProviderConfig(BaseModel):
+    name: str
+    kind: str = Field(pattern="^(openrouter|gemini|ollama|mistral)$")
+    enabled: bool = True
+    model: str
+    base_url: str | None = None
+    api_key_env: str | None = None
+    temperature: float = 0.3
+    max_retries: int = 2
+    timeout_seconds: int = 60
+
+
+class LLMConfig(BaseModel):
+    provider: str = Field(default="router", pattern="^(openrouter|gemini|router)$")
+    
+    # Pour la compatibilité avec l'ancienne configuration simple
+    model: str = "openrouter/auto"
+    api_key_env: str = "OPENROUTER_API_KEY"
+    temperature: float = 0.3
+    
+    provider_order: list[str] = Field(
+        default_factory=lambda: [
+            "mistral_api",
+            "openrouter_auto",
+            "ollama_local",
+            "gemini_flash",
+        ]
+    )
+    providers: list[LLMProviderConfig] = Field(
+        default_factory=lambda: [
+            LLMProviderConfig(
+                name="ollama_local",
+                kind="ollama",
+                enabled=False,
+                model="llama3",
+                base_url="http://localhost:11434/v1",
+            ),
+            LLMProviderConfig(
+                name="ollama_cloud",
+                kind="ollama",
+                enabled=False,
+                model="llama3",
+                base_url="https://api.ollama.com/v1", # Exemple, à adapter
+                api_key_env="OLLAMA_API_KEY",
+            ),
+            LLMProviderConfig(
+                name="openrouter_auto",
+                kind="openrouter",
+                enabled=True,
+                model="openrouter/auto",
+                api_key_env="OPENROUTER_API_KEY",
+            ),
+            LLMProviderConfig(
+                name="gemini_flash",
+                kind="gemini",
+                enabled=False,
+                model="gemini-1.5-flash",
+                api_key_env="GEMINI_API_KEY",
+            ),
+            LLMProviderConfig(
+                name="mistral_api",
+                kind="mistral",
+                enabled=True,
+                model="mistral-large-latest",
+                api_key_env="MISTRAL_API_KEY",
+            ),
+        ]
+    )
+
+
 class EmbeddingsConfig(BaseModel):
     provider: str = Field(default="local", pattern="^(local|gemini|openrouter|mistral)$")
     model: str = "all-MiniLM-L6-v2"
@@ -246,7 +316,7 @@ class VectorStoreConfig(BaseModel):
 
 
 class ProjectConfig(BaseModel):
-    schema_version: str = "1.4"
+    schema_version: str = "1.5"
     atomizer: AtomizerConfig = Field(default_factory=AtomizerConfig)
     ocr: OCRConfig = Field(default_factory=OCRConfig)
     batching: BatchConfig = Field(default_factory=BatchConfig)
@@ -257,6 +327,7 @@ class ProjectConfig(BaseModel):
     policy: PolicyConfig = Field(default_factory=PolicyConfig)
     embeddings: EmbeddingsConfig = Field(default_factory=EmbeddingsConfig)
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
+    llm: LLMConfig = Field(default_factory=LLMConfig)
 
 
 class RuntimeSettings(BaseModel):

@@ -1,0 +1,116 @@
+{
+  "version": "1.0.0",
+  "birth_timestamp": "2026-04-08T03:30:10.412058",
+  "last_wake_up": "2026-04-08T03:30:10.413773",
+  "wake_up_count": 1,
+  "current_state": "healthy",
+  "active_strategy": "standard",
+  "actions_pending": [],
+  "actions_in_progress": [],
+  "actions_completed": [],
+  "dev_book": {
+    "current_focus": "Aucun - Système en surveillance",
+    "sprint_goal": "Indexation complète du workspace",
+    "todo": [
+      {
+        "id": "todo_1",
+        "task": "Compléter indexation .agent/rag/",
+        "priority": "high",
+        "estimated_minutes": 30,
+        "blocked_by": null
+      },
+      {
+        "id": "todo_2",
+        "task": "Vérifier collections Qdrant",
+        "priority": "medium",
+        "estimated_minutes": 10,
+        "blocked_by": "todo_1"
+      }
+    ],
+    "in_progress": [],
+    "blocked": [],
+    "dont_do": [
+      "Ne pas redémarrer Qdrant si indexation en cours",
+      "Ne pas modifier config.json sans backup",
+      "Ne pas lancer 2 indexations en parallèle"
+    ],
+    "done_today": [],
+    "metrics": {
+      "tasks_completed_today": 0,
+      "tasks_blocked": 0,
+      "focus_time_minutes": 0,
+      "last_accomplishment": null
+    }
+  },
+  "problem_database": [],
+  "strategies": {
+    "standard": {
+      "name": "Standard Operation",
+      "description": "Fonctionnement normal avec toutes les sources",
+      "success_rate": 0.95,
+      "conditions": [
+        "all_systems_healthy"
+      ]
+    },
+    "qdrant_only": {
+      "name": "Qdrant Fallback",
+      "description": "Désactive Zvec, utilise seulement Qdrant",
+      "success_rate": 0.85,
+      "conditions": [
+        "zvec_unavailable"
+      ]
+    },
+    "local_only": {
+      "name": "Local Emergency Mode",
+      "description": "Mode dégradé sans API externes",
+      "success_rate": 0.7,
+      "conditions": [
+        "mistral_api_down",
+        "qdrant_down"
+      ]
+    },
+    "cache_first": {
+      "name": "Cache Priority",
+      "description": "Priorise le cache SQLite, minimise les appels",
+      "success_rate": 0.9,
+      "conditions": [
+        "rate_limit_hit",
+        "slow_response"
+      ]
+    }
+  },
+  "timeline": [
+    {
+      "timestamp": "2026-04-08T03:30:10.414164",
+      "event_type": "wake_up",
+      "description": "Réveil #1",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    }
+  ],
+  "health_metrics": {
+    "avg_response_time_ms": 0,
+    "error_rate_24h": 0.0,
+    "successful_queries": 0,
+    "failed_queries": 0
+  },
+  "intentions": [
+    "Maintenir la mémoire unifiée opérationnelle",
+    "Minimiser les temps de réponse",
+    "Apprendre des erreurs passées",
+    "S'adapter aux préférences utilisateur",
+    "Rester dans les limites éthiques (Asimov)"
+  ],
+  "insights": [],
+  "config": {
+    "wake_interval_minutes": 5,
+    "max_timeline_events": 100,
+    "reflection_depth": 3,
+    "auto_recovery": true
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "summary": {
+    "total_tests": 5,
+    "passed": 5,
+    "warnings": 0,
+    "failed": 0,
+    "skipped": 0,
+    "total_time_seconds": 59.47
+  },
+  "results": [
+    {
+      "test": "prism_selection_stress",
+      "iterations": 1000,
+      "elapsed_seconds": 0.01,
+      "per_iteration_ms": 0.01,
+      "memory_start_mb": 47.8,
+      "memory_end_mb": 47.8,
+      "memory_growth_mb": 0.0,
+      "errors_count": 0,
+      "status": "PASS"
+    },
+    {
+      "test": "error_handling",
+      "total_cases": 7,
+      "passed": 7,
+      "failed": 0,
+      "status": "PASS"
+    },
+    {
+      "test": "concurrent_load",
+      "tasks": 50,
+      "successes": 50,
+      "failures": 0,
+      "total_time_seconds": 0.0,
+      "avg_time_per_task_ms": 0.01,
+      "status": "PASS"
+    },
+    {
+      "test": "ollama_pressure",
+      "calls": 5,
+      "successful": 5,
+      "avg_latency_seconds": 5.83,
+      "max_latency_seconds": 7.73,
+      "status": "PASS"
+    },
+    {
+      "test": "memory_stability",
+      "duration_seconds": 30,
+      "iterations": 1938,
+      "memory_start_mb": 48.98,
+      "memory_end_mb": 48.96,
+      "total_growth_mb": -0.01,
+      "growth_per_sample_mb": 0.0,
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "fragilities": []
+}

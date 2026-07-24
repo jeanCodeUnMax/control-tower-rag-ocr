@@ -1,0 +1,24 @@
+{
+  "session_id": "session_20260408_192536_33be98",
+  "started_at": "2026-04-08T19:25:36.049195",
+  "last_update": "2026-04-08T19:25:36.049202",
+  "exchange_count": 1,
+  "exchanges": [
+    {
+      "timestamp": "2026-04-08T19:25:36.049195",
+      "session_id": "session_20260408_192536_33be98",
+      "user_message": "Ok, fais ce test. Apres il faudrait reactiver le watchdog.",
+      "assistant_response": "Je teste la capture et je reactive le watchdog.",
+      "extracted_intent": "DISCUSS",
+      "extracted_actions": [
+        "run_test"
+      ],
+      "extracted_decisions": [],
+      "tags": [
+        "discuss",
+        "testing"
+      ],
+      "priority": "medium"
+    }
+  ]
+}

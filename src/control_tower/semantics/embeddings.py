@@ -43,6 +43,14 @@ class LocalEmbeddingProvider(EmbeddingProvider):
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
         self.model_name = model_name
         try:
+            import os
+            hf_token = os.environ.get("HF_TOKEN")
+            if hf_token and hf_token.startswith("hf_"):
+                try:
+                    from huggingface_hub import login
+                    login(token=hf_token)
+                except Exception as e:
+                    print(f"⚠️ Erreur d'authentification HuggingFace (Token ignoré) : {e}")
             from sentence_transformers import SentenceTransformer
             self.model = SentenceTransformer(model_name)
         except ImportError as exc:

@@ -1,0 +1,24 @@
+{
+  "session_id": "session_20260408_192536_16f9e2",
+  "started_at": "2026-04-08T19:25:36.052451",
+  "last_update": "2026-04-08T19:25:36.052459",
+  "exchange_count": 1,
+  "exchanges": [
+    {
+      "timestamp": "2026-04-08T19:25:36.052451",
+      "session_id": "session_20260408_192536_16f9e2",
+      "user_message": "Test rapide de la mémoire",
+      "assistant_response": "Capture fonctionne parfaitement!",
+      "extracted_intent": "DISCUSS",
+      "extracted_actions": [
+        "run_test"
+      ],
+      "extracted_decisions": [],
+      "tags": [
+        "discuss",
+        "testing"
+      ],
+      "priority": "medium"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-07-24T02:52:51.265993",
+  "overall_ok": true,
+  "checks": {
+    "rag_bridge": {
+      "component": "RAG Bridge",
+      "port_8001": true,
+      "port_8002": true,
+      "health_endpoint": {
+        "ok": true,
+        "status_code": 200,
+        "body": {
+          "status": "ok",
+          "service": "zvec-rest-bridge"
+        }
+      },
+      "pid": 2560,
+      "pid_alive": true,
+      "ok": true
+    },
+    "monitor": {
+      "component": "Monitor (Node.js)",
+      "port_3055": true,
+      "ok": true
+    },
+    "memory": {
+      "component": "Memory Directories",
+      "dirs": {
+        "global": true,
+        "local": true,
+        "graph": true,
+        "vector": true,
+        "cache": true
+      },
+      "ok": true
+    },
+    "log_errors": {
+      "component": "Log Error Scanner",
+      "bridge_errors": 0,
+      "workspace_errors": 0,
+      "recent_errors": [],
+      "ok": true
+    }
+  }
+}

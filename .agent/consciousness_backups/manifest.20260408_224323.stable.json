@@ -1,0 +1,1313 @@
+{
+  "version": "1.0.0",
+  "birth_timestamp": "2026-04-08T02:58:15.291920",
+  "last_wake_up": "2026-04-08T22:43:23.643666",
+  "wake_up_count": 119,
+  "current_state": "healthy",
+  "active_strategy": "standard",
+  "problem_database": [],
+  "strategies": {
+    "standard": {
+      "name": "Standard Operation",
+      "description": "Fonctionnement normal avec toutes les sources",
+      "success_rate": 0.95,
+      "conditions": [
+        "all_systems_healthy"
+      ]
+    },
+    "qdrant_only": {
+      "name": "Qdrant Fallback",
+      "description": "Désactive Zvec, utilise seulement Qdrant",
+      "success_rate": 0.85,
+      "conditions": [
+        "zvec_unavailable"
+      ]
+    },
+    "local_only": {
+      "name": "Local Emergency Mode",
+      "description": "Mode dégradé sans API externes",
+      "success_rate": 0.7,
+      "conditions": [
+        "mistral_api_down",
+        "qdrant_down"
+      ]
+    },
+    "cache_first": {
+      "name": "Cache Priority",
+      "description": "Priorise le cache SQLite, minimise les appels",
+      "success_rate": 0.9,
+      "conditions": [
+        "rate_limit_hit",
+        "slow_response"
+      ]
+    }
+  },
+  "timeline": [
+    {
+      "timestamp": "2026-04-08T19:08:15.392697",
+      "event_type": "wake_up",
+      "description": "Réveil #22",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:08:43.745856",
+      "event_type": "wake_up",
+      "description": "Réveil #23",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:09:00.858003",
+      "event_type": "wake_up",
+      "description": "Réveil #24",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:10:52.718838",
+      "event_type": "wake_up",
+      "description": "Réveil #25",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:13:15.491361",
+      "event_type": "wake_up",
+      "description": "Réveil #26",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:15:52.811825",
+      "event_type": "wake_up",
+      "description": "Réveil #27",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:18:15.595442",
+      "event_type": "wake_up",
+      "description": "Réveil #28",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:20:52.913783",
+      "event_type": "wake_up",
+      "description": "Réveil #29",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:21:48.929518",
+      "event_type": "user_session",
+      "description": "Session session_20260408_192148_f35802: 1 échanges, 0 actions ajoutées",
+      "context": {
+        "session_id": "session_20260408_192148_f35802",
+        "exchange_count": 1,
+        "intents": [
+          "DISCUSS"
+        ],
+        "priorities": [
+          "medium"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-08T19:23:15.719579",
+      "event_type": "wake_up",
+      "description": "Réveil #30",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:25:36.050934",
+      "event_type": "user_session",
+      "description": "Session session_20260408_192536_33be98: 1 échanges, 0 actions ajoutées",
+      "context": {
+        "session_id": "session_20260408_192536_33be98",
+        "exchange_count": 1,
+        "intents": [
+          "DISCUSS"
+        ],
+        "priorities": [
+          "medium"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-04-08T19:25:53.021851",
+      "event_type": "wake_up",
+      "description": "Réveil #31",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:28:16.095226",
+      "event_type": "wake_up",
+      "description": "Réveil #32",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:30:53.127559",
+      "event_type": "wake_up",
+      "description": "Réveil #33",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:33:16.196660",
+      "event_type": "wake_up",
+      "description": "Réveil #34",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:35:53.229803",
+      "event_type": "wake_up",
+      "description": "Réveil #35",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:38:16.303759",
+      "event_type": "wake_up",
+      "description": "Réveil #36",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:40:53.341095",
+      "event_type": "wake_up",
+      "description": "Réveil #37",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:43:16.417407",
+      "event_type": "wake_up",
+      "description": "Réveil #38",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:45:53.452466",
+      "event_type": "wake_up",
+      "description": "Réveil #39",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:48:16.530851",
+      "event_type": "wake_up",
+      "description": "Réveil #40",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:50:53.556223",
+      "event_type": "wake_up",
+      "description": "Réveil #41",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:53:16.929973",
+      "event_type": "wake_up",
+      "description": "Réveil #42",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:55:53.665658",
+      "event_type": "wake_up",
+      "description": "Réveil #43",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T19:56:26.632964",
+      "event_type": "manual_wake",
+      "description": "Réveil manuel utilisateur",
+      "context": {
+        "wake_num": 44
+      }
+    },
+    {
+      "timestamp": "2026-04-08T19:58:17.039529",
+      "event_type": "wake_up",
+      "description": "Réveil #45",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:00:53.787238",
+      "event_type": "wake_up",
+      "description": "Réveil #46",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:02:31.359034",
+      "event_type": "indexing_complete",
+      "description": "Indexation: 31 fichiers, 696 chunks",
+      "context": {
+        "files": 31,
+        "chunks": 696
+      }
+    },
+    {
+      "timestamp": "2026-04-08T20:03:17.158592",
+      "event_type": "wake_up",
+      "description": "Réveil #47",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:05:53.910212",
+      "event_type": "wake_up",
+      "description": "Réveil #48",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:08:17.264605",
+      "event_type": "wake_up",
+      "description": "Réveil #49",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:10:54.018954",
+      "event_type": "wake_up",
+      "description": "Réveil #50",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:13:17.374374",
+      "event_type": "wake_up",
+      "description": "Réveil #51",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:15:54.451728",
+      "event_type": "wake_up",
+      "description": "Réveil #52",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:18:17.480843",
+      "event_type": "wake_up",
+      "description": "Réveil #53",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:20:54.560258",
+      "event_type": "wake_up",
+      "description": "Réveil #54",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:23:17.584356",
+      "event_type": "wake_up",
+      "description": "Réveil #55",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:25:54.668132",
+      "event_type": "wake_up",
+      "description": "Réveil #56",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:28:17.690020",
+      "event_type": "wake_up",
+      "description": "Réveil #57",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:30:54.778768",
+      "event_type": "wake_up",
+      "description": "Réveil #58",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:31:23.577971",
+      "event_type": "manual_wake",
+      "description": "Réveil manuel utilisateur",
+      "context": {
+        "wake_num": 59
+      }
+    },
+    {
+      "timestamp": "2026-04-08T20:33:17.798061",
+      "event_type": "wake_up",
+      "description": "Réveil #60",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:35:54.927343",
+      "event_type": "wake_up",
+      "description": "Réveil #61",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:38:18.338266",
+      "event_type": "wake_up",
+      "description": "Réveil #62",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:40:55.035572",
+      "event_type": "wake_up",
+      "description": "Réveil #63",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:43:18.448671",
+      "event_type": "wake_up",
+      "description": "Réveil #64",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:43:45.544173",
+      "event_type": "manual_wake",
+      "description": "Réveil manuel utilisateur",
+      "context": {
+        "wake_num": 65
+      }
+    },
+    {
+      "timestamp": "2026-04-08T20:45:55.155228",
+      "event_type": "wake_up",
+      "description": "Réveil #66",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:48:18.563873",
+      "event_type": "wake_up",
+      "description": "Réveil #67",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:50:55.268597",
+      "event_type": "wake_up",
+      "description": "Réveil #68",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:53:18.679814",
+      "event_type": "wake_up",
+      "description": "Réveil #69",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:55:55.427490",
+      "event_type": "wake_up",
+      "description": "Réveil #70",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T20:58:18.844786",
+      "event_type": "wake_up",
+      "description": "Réveil #71",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:00:55.953601",
+      "event_type": "wake_up",
+      "description": "Réveil #72",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:03:18.965195",
+      "event_type": "wake_up",
+      "description": "Réveil #73",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:05:56.072736",
+      "event_type": "wake_up",
+      "description": "Réveil #74",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:08:19.081691",
+      "event_type": "wake_up",
+      "description": "Réveil #75",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:10:56.193118",
+      "event_type": "wake_up",
+      "description": "Réveil #76",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:13:19.198039",
+      "event_type": "wake_up",
+      "description": "Réveil #77",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:15:56.312454",
+      "event_type": "wake_up",
+      "description": "Réveil #78",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:18:19.309092",
+      "event_type": "wake_up",
+      "description": "Réveil #79",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:20:56.419272",
+      "event_type": "wake_up",
+      "description": "Réveil #80",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:23:19.449880",
+      "event_type": "wake_up",
+      "description": "Réveil #81",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:25:57.013411",
+      "event_type": "wake_up",
+      "description": "Réveil #82",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:28:19.614759",
+      "event_type": "wake_up",
+      "description": "Réveil #83",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:30:57.129231",
+      "event_type": "wake_up",
+      "description": "Réveil #84",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:33:19.723979",
+      "event_type": "wake_up",
+      "description": "Réveil #85",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:35:57.245266",
+      "event_type": "wake_up",
+      "description": "Réveil #86",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:38:19.836467",
+      "event_type": "wake_up",
+      "description": "Réveil #87",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:40:57.361643",
+      "event_type": "wake_up",
+      "description": "Réveil #88",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:43:19.944712",
+      "event_type": "wake_up",
+      "description": "Réveil #89",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:45:57.473841",
+      "event_type": "wake_up",
+      "description": "Réveil #90",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:48:20.046986",
+      "event_type": "wake_up",
+      "description": "Réveil #91",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:49:22.328939",
+      "event_type": "manual_wake",
+      "description": "Réveil manuel utilisateur",
+      "context": {
+        "wake_num": 92
+      }
+    },
+    {
+      "timestamp": "2026-04-08T21:49:59.977845",
+      "event_type": "wake_up",
+      "description": "Réveil #93",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:50:58.122181",
+      "event_type": "wake_up",
+      "description": "Réveil #94",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:53:20.161911",
+      "event_type": "wake_up",
+      "description": "Réveil #95",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:55:58.245262",
+      "event_type": "wake_up",
+      "description": "Réveil #96",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:57:25.297252",
+      "event_type": "wake_up",
+      "description": "Réveil #97",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T21:58:20.269905",
+      "event_type": "wake_up",
+      "description": "Réveil #98",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:00:58.352553",
+      "event_type": "wake_up",
+      "description": "Réveil #99",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:03:20.382933",
+      "event_type": "wake_up",
+      "description": "Réveil #100",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:05:58.460968",
+      "event_type": "wake_up",
+      "description": "Réveil #101",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:08:21.175299",
+      "event_type": "wake_up",
+      "description": "Réveil #102",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:10:58.573072",
+      "event_type": "wake_up",
+      "description": "Réveil #103",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:13:21.290586",
+      "event_type": "wake_up",
+      "description": "Réveil #104",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:15:58.676997",
+      "event_type": "wake_up",
+      "description": "Réveil #105",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:18:21.389118",
+      "event_type": "wake_up",
+      "description": "Réveil #106",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:20:58.779546",
+      "event_type": "wake_up",
+      "description": "Réveil #107",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:23:21.492312",
+      "event_type": "wake_up",
+      "description": "Réveil #108",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:25:58.885024",
+      "event_type": "wake_up",
+      "description": "Réveil #109",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:28:21.600350",
+      "event_type": "wake_up",
+      "description": "Réveil #110",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:30:58.986636",
+      "event_type": "wake_up",
+      "description": "Réveil #111",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:33:22.365910",
+      "event_type": "wake_up",
+      "description": "Réveil #112",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:35:17.125655",
+      "event_type": "wake_up",
+      "description": "Réveil #113",
+      "reflection_type": "standard",
+      "causal_link": null,
+      "question": null,
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:35:59.091803",
+      "event_type": "wake_up",
+      "description": "Réveil #114",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:38:22.479378",
+      "event_type": "wake_up",
+      "description": "Réveil #115",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:38:23.619651",
+      "event_type": "wake_up",
+      "description": "Réveil #116",
+      "reflection_type": "standard",
+      "causal_link": null,
+      "question": null,
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:40:59.211467",
+      "event_type": "wake_up",
+      "description": "Réveil #117",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:43:22.585893",
+      "event_type": "wake_up",
+      "description": "Réveil #118",
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    },
+    {
+      "timestamp": "2026-04-08T22:43:23.644353",
+      "event_type": "wake_up",
+      "description": "Réveil #119",
+      "reflection_type": "standard",
+      "causal_link": null,
+      "question": null,
+      "context": {
+        "state": "healthy",
+        "problems_detected": 0,
+        "insights_generated": 0
+      },
+      "state_before": "healthy",
+      "state_after": "healthy"
+    }
+  ],
+  "health_metrics": {
+    "avg_response_time_ms": 0,
+    "error_rate_24h": 0.0,
+    "successful_queries": 0,
+    "failed_queries": 0
+  },
+  "intentions": [
+    "Maintenir la mémoire unifiée opérationnelle",
+    "Minimiser les temps de réponse",
+    "Apprendre des erreurs passées",
+    "S'adapter aux préférences utilisateur",
+    "Rester dans les limites éthiques (Asimov)"
+  ],
+  "insights": [
+    "Session session_20260408_192148_f35802: intents=DISCUSS, actions=1",
+    "Session session_20260408_192536_33be98: intents=DISCUSS, actions=1"
+  ],
+  "config": {
+    "wake_interval_minutes": 1,
+    "max_timeline_events": 100,
+    "reflection_depth": 3,
+    "auto_recovery": true
+  },
+  "dev_book": {
+    "todo": [
+      {
+        "id": "task_20260408_203708",
+        "task": "Description de votre tâche",
+        "priority": "high",
+        "created_at": "2026-04-08T20:37:08.677240",
+        "source": "manual"
+      },
+      {
+        "id": "task_20260408_203905",
+        "task": "donner l etat de la memoire unifier ,donner l eta de conscience ,est  til 200/100 awarness?",
+        "priority": "high",
+        "created_at": "2026-04-08T20:39:05.225240",
+        "source": "manual"
+      },
+      {
+        "id": "task_20260408_223425",
+        "task": "RAPPORT: Mémoire Unifiée stable dans C:\\DATA-WEBMAN\\memory\\, Conscience Multidimensionnelle active. Awareness 200/100 validée.",
+        "priority": "--priority",
+        "created_at": "2026-04-08T22:34:25.857745",
+        "source": "manual"
+      },
+      {
+        "id": "task_20260408_223859",
+        "task": "MISE À JOUR: Arbre de Causes automatisé. Moteur d'analyse rétroactive injecté dans _auto_fix_wake_error. Résolution intelligente active.",
+        "priority": "--priority",
+        "created_at": "2026-04-08T22:38:59.357811",
+        "source": "manual"
+      }
+    ],
+    "in_progress": [],
+    "done": [],
+    "blocked": []
+  }
+}

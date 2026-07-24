@@ -1,0 +1,27 @@
+{
+  "prompt_index": {
+    "mode": "string (ex: nasa)",
+    "shrink": "string (essence atomique)",
+    "tags": ["list of strings"],
+    "summary": "string (rôle et protocole)",
+    "raw_prompt": "string (le texte complet)",
+    "embedding": null
+  },
+  "semantic_match": {
+    "task": "string (ex: Snake Game)",
+    "matches": [
+      {
+        "mode": "string",
+        "score": 0.0,
+        "reason": "string (pourquoi ce choix)"
+      }
+    ]
+  },
+  "pipeline_run": {
+    "target_file": "string",
+    "personas": ["list of modes"],
+    "artifacts": {
+      "mode": "path_to_artifact.md"
+    }
+  }
+}

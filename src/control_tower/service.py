@@ -538,11 +538,13 @@ class ControlTowerService:
             return {"status": "no_chunks_found"}
             
         # Pour faire simple dans la V1 : on re-vectorise tout
-        # L'idéal serait de flagger les chunks déjà vectorisés.
         texts_to_embed = [chunk.text for chunk in chunks]
         
         # TODO: Batching selon les limites de l'API/Provider
         vectors = embedder.embed_batch(texts_to_embed)
+        
+        # S'assurer que la collection existe avec la bonne dimension
+        vector_store.init_collection(config.vector_store.collection_name, embedder.dimension)
         
         upserted_count = 0
         for chunk, vector in zip(chunks, vectors):
@@ -562,4 +564,241 @@ class ControlTowerService:
             "vectors_upserted": upserted_count,
             "dimension": embedder.dimension,
             "vector_store": config.vector_store.engine
+        }
+
+    def ask_project(self, project_id: str, question: str, top_k: int = 5) -> dict:
+        """Pose une question au RAG du projet."""
+        self.workspace.require(project_id)
+        config = self.workspace.load_config(project_id)
+        
+        from control_tower.semantics.embeddings import get_embedding_provider
+        from control_tower.storage.vector import QdrantVectorStore
+        from control_tower.generation.llm import get_llm_provider
+        from control_tower.retrieval.rag import RAGEngine
+        
+        # Initialiser les briques
+        embedder = get_embedding_provider(
+            provider_type=config.embeddings.provider,
+            model_name=config.embeddings.model
+        )
+        
+        if config.vector_store.engine == "qdrant":
+            vector_store = QdrantVectorStore(url=config.vector_store.url)
+        else:
+            raise ValueError(f"Moteur vectoriel non supporté: {config.vector_store.engine}")
+            
+        llm = get_llm_provider(
+            provider_type=config.llm.provider,
+            config_obj=config.llm,
+            model_name=config.llm.model,
+            api_key_env=config.llm.api_key_env,
+            temperature=config.llm.temperature
+        )
+        
+        rag = RAGEngine(
+            vector_store=vector_store,
+            embedder=embedder,
+            llm=llm,
+            collection_name=config.vector_store.collection_name
+        )
+        
+        return rag.ask(question=question, top_k=top_k)
+
+    def compare_llms(self, project_id: str, question: str, top_k: int = 5) -> dict:
+        """Compare les réponses de plusieurs LLMs en parallèle pour la même question."""
+        self.workspace.require(project_id)
+        config = self.workspace.load_config(project_id)
+        
+        from control_tower.semantics.embeddings import get_embedding_provider
+        from control_tower.storage.vector import QdrantVectorStore
+        from control_tower.generation.llm import get_llm_provider
+        import concurrent.futures
+        import time
+        
+        # 1. Obtenir le contexte UNE SEULE FOIS
+        embedder = get_embedding_provider(
+            provider_type=config.embeddings.provider,
+            model_name=config.embeddings.model
+        )
+        
+        if config.vector_store.engine == "qdrant":
+            vector_store = QdrantVectorStore(url=config.vector_store.url)
+        else:
+            raise ValueError(f"Moteur vectoriel non supporté: {config.vector_store.engine}")
+            
+        # Recherche
+        query_vector = embedder.embed_text(question)
+        results = vector_store.search(
+            collection_name=config.vector_store.collection_name,
+            query_vector=query_vector,
+            limit=top_k,
+        )
+
+        sources = []
+        context_parts = []
+        if results:
+            for i, hit in enumerate(results, 1):
+                text = hit.get("text", "")
+                doc_id = hit.get("document_id", "Inconnu")
+                score = hit.get("score", 0.0)
+                context_parts.append(f"--- Source {i} (Document: {doc_id}) ---\n{text}\n")
+                sources.append({"document_id": doc_id, "score": score, "text_snippet": text[:100]})
+
+        context_text = "\n".join(context_parts)
+        
+        system_prompt = (
+            "Tu es 'Control Tower', un assistant IA expert en analyse documentaire. "
+            "Ton rôle est de répondre aux questions de l'utilisateur de manière précise, "
+            "en te basant EXCLUSIVEMENT sur les documents fournis dans le contexte ci-dessous.\n\n"
+            "RÈGLES IMPORTANTES :\n"
+            "- Si la réponse ne se trouve pas dans le contexte, dis-le clairement. N'invente rien.\n"
+            "- Sois concis et direct."
+        )
+
+        user_prompt = f"CONTEXTE RÉCUPÉRÉ DES DOCUMENTS :\n{context_text}\n\nQUESTION DE L'UTILISATEUR :\n{question}"
+
+        # 2. Lancer les LLMs en parallèle
+        comparisons = []
+        
+        def call_llm(prov_config):
+            start_time = time.time()
+            try:
+                llm = get_llm_provider(
+                    provider_type=prov_config.kind,
+                    config_obj=config.llm,
+                    model_name=prov_config.model,
+                    api_key_env=prov_config.api_key_env,
+                    temperature=config.llm.temperature
+                )
+                answer = llm.generate(prompt=user_prompt, system_prompt=system_prompt)
+                elapsed = time.time() - start_time
+                return {
+                    "name": prov_config.name,
+                    "model": prov_config.model,
+                    "answer": answer,
+                    "time": elapsed,
+                    "error": None
+                }
+            except Exception as e:
+                elapsed = time.time() - start_time
+                return {
+                    "name": prov_config.name,
+                    "model": prov_config.model,
+                    "answer": None,
+                    "time": elapsed,
+                    "error": str(e)
+                }
+
+        # Extraire la liste des fournisseurs activés
+        providers_to_test = [p for p in config.llm.providers if p.enabled]
+        if not providers_to_test:
+            # Si aucun n'est explicitement activé, on les teste tous
+            providers_to_test = config.llm.providers
+            if not providers_to_test:
+                raise ValueError("Aucun fournisseur défini dans la configuration du projet.")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(providers_to_test)) as executor:
+            futures = [executor.submit(call_llm, p) for p in providers_to_test]
+            for future in concurrent.futures.as_completed(futures):
+                comparisons.append(future.result())
+
+        return {
+            "project_id": project_id,
+            "question": question,
+            "sources": sources,
+            "comparisons": comparisons
+        }
+
+    def synthesize_llms(self, project_id: str, question: str, output_file: str = "synthese-ai-grouped.md", top_k: int = 5, use_web_search: bool = False, paradigm: str = "executive") -> dict:
+        """Fait générer des réponses en parallèle puis utilise Mistral pour créer une méga-synthèse selon un paradigme donné."""
+        import os
+        from control_tower.generation.llm import get_llm_provider
+        from control_tower.generation.paradigms import COGNITIVE_PARADIGMS
+        
+        # 1. Obtenir les comparaisons (Phase 1)
+        compare_result = self.compare_llms(project_id, question, top_k)
+        comparisons = compare_result.get("comparisons", [])
+        
+        # 2. Filtrer les réponses valides
+        valid_answers = [c for c in comparisons if c.get("answer") and not c.get("error")]
+        
+        if not valid_answers:
+            raise ValueError("Aucun LLM n'a réussi à générer une réponse valide pour la synthèse.")
+            
+        # 3. Construire le prompt de synthèse
+        drafts_text = ""
+        for i, ans in enumerate(valid_answers, 1):
+            drafts_text += f"\n### Brouillon {i} (par {ans['name']} - {ans['model']}) :\n{ans['answer']}\n"
+            
+        # NOUVEAU : Option de recherche Web (DDGS)
+        web_context_text = ""
+        web_sources_count = 0
+        if use_web_search:
+            try:
+                from duckduckgo_search import DDGS
+                with DDGS() as ddgs:
+                    results = list(ddgs.text(question, max_results=3, safesearch="moderate"))
+                    if results:
+                        web_sources_count = len(results)
+                        web_context_text = "\n\n### INFORMATIONS TROUVÉES SUR LE WEB EN TEMPS RÉEL :\n"
+                        for r in results:
+                            web_context_text += f"- **[{r['title']}]({r['href']})** : {r['body']}\n"
+            except ImportError:
+                import logging
+                logging.getLogger(__name__).warning("duckduckgo-search n'est pas installé. Recherche web ignorée.")
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Erreur lors de la recherche web: {e}")
+                
+        # 4. Sélectionner le prompt système selon le paradigme choisi
+        if paradigm not in COGNITIVE_PARADIGMS:
+            import logging
+            logging.getLogger(__name__).warning(f"Paradigme '{paradigm}' inconnu. Utilisation de 'executive' par défaut.")
+            paradigm = "executive"
+            
+        system_prompt = COGNITIVE_PARADIGMS[paradigm]
+        
+        user_prompt = (
+            f"Voici la question originelle de l'utilisateur :\n{question}\n\n"
+            f"Voici les brouillons générés par différentes intelligences artificielles (basés sur le RAG interne) :\n{drafts_text}\n"
+        )
+        if web_context_text:
+            user_prompt += web_context_text
+            
+        user_prompt += "\n\nRédige maintenant ta réponse finale au format Markdown, en appliquant strictement ton paradigme."
+        
+        # 4. Trouver la config de Mistral Large
+        config = self.workspace.load_config(project_id)
+        mistral_config = next((p for p in config.llm.providers if p.kind == "mistral"), None)
+        
+        if not mistral_config:
+            mistral_config = next((p for p in config.llm.providers if p.enabled), None)
+            
+        if not mistral_config:
+            mistral_config = config.llm.providers[0] if config.llm.providers else None
+            
+        if not mistral_config:
+            raise ValueError("Impossible de trouver un modèle pour réaliser la synthèse.")
+            
+        # 5. Appeler le synthétiseur avec la température à presque 0 pour brider la créativité
+        llm = get_llm_provider(
+            provider_type=mistral_config.kind,
+            config_obj=config.llm,
+            model_name=mistral_config.model,
+            api_key_env=mistral_config.api_key_env,
+            temperature=0.1 # <--- STRICT GROUNDING : On bride la créativité au maximum
+        )
+        
+        final_answer = llm.generate(prompt=user_prompt, system_prompt=system_prompt)
+        
+        # 6. Sauvegarder dans le fichier
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(f"# Synthèse Consolidée 🧠\n\n**Question :** {question}\n\n---\n\n")
+            f.write(final_answer)
+            
+        return {
+            "output_file": os.path.abspath(output_file),
+            "sources_used": len(valid_answers),
+            "web_sources": web_sources_count,
+            "synthesizer": f"{mistral_config.name} ({mistral_config.model})"
         }
