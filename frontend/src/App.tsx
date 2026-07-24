@@ -1,0 +1,538 @@
+import { useState, useEffect } from 'react'
+import { Activity, Database, Swords, Server, Shield, BrainCircuit, Loader2, FileText, Layers } from 'lucide-react'
+
+function App() {
+  const [activeTab, setActiveTab] = useState('arena')
+  const [question, setQuestion] = useState('')
+  const [paradigm, setParadigm] = useState('executive')
+  const [webSearch, setWebSearch] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<any>(null)
+
+  const handleSynthesize = async () => {
+    if (!question.trim()) return
+    setLoading(true)
+    setResult(null)
+    try {
+      const projectId = (document.getElementById('projectIdInput') as HTMLInputElement)?.value || 'demo'
+      const response = await fetch('http://localhost:8000/synthesize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_id: projectId,
+          question: question,
+          top_k: 5,
+          use_web_search: webSearch,
+          paradigm: paradigm
+        })
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        setResult({ error: data.detail || `Erreur serveur: ${response.status}` })
+      } else {
+        setResult(data)
+      }
+    } catch (error) {
+      console.error(error)
+      setResult({ error: "Erreur lors de la communication avec l'API" })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#0b0f19] text-gray-300 font-sans">
+      {/* Header */}
+      <header className="border-b border-cyan-900/50 bg-[#111827]/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <BrainCircuit className="h-8 w-8 text-cyan-400" />
+            <h1 className="text-xl font-bold text-white tracking-wide">
+              CONTROL TOWER <span className="text-cyan-500 font-light">AGI</span>
+            </h1>
+          </div>
+          <div className="flex space-x-2">
+            <span className="inline-flex items-center rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-400 ring-1 ring-inset ring-emerald-400/20">
+              <Server className="h-3 w-3 mr-1" />
+              API Online
+            </span>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex gap-8">
+        
+        {/* Sidebar Nav */}
+        <nav className="w-64 shrink-0 space-y-2">
+          <button 
+            onClick={() => setActiveTab('ingestion')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+            activeTab === 'ingestion' ? 'bg-cyan-900/30 text-cyan-400 border border-cyan-500/30' : 'hover:bg-gray-800 text-gray-400'
+          }`}>
+            <Activity className="h-5 w-5" />
+            <span className="font-medium">1. Le Radar</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('observatory')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+            activeTab === 'observatory' ? 'bg-indigo-900/30 text-indigo-400 border border-indigo-500/30' : 'hover:bg-gray-800 text-gray-400'
+          }`}>
+            <Database className="h-5 w-5" />
+            <span className="font-medium">2. Observatoire Vectoriel</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('arena')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+            activeTab === 'arena' ? 'bg-fuchsia-900/30 text-fuchsia-400 border border-fuchsia-500/30' : 'hover:bg-gray-800 text-gray-400'
+          }`}>
+            <Swords className="h-5 w-5" />
+            <span className="font-medium">3. L'Arène (Synthèse)</span>
+          </button>
+        </nav>
+
+        {/* Dynamic Area */}
+        <div className="flex-1 flex flex-col bg-[#111827]/50 rounded-2xl border border-gray-800 shadow-2xl p-6 relative overflow-hidden h-[calc(100vh-10rem)]">
+          {/* Ambient Glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+          {activeTab === 'arena' && (
+            <div className="flex flex-col h-full relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white flex items-center">
+                  <Swords className="h-6 w-6 mr-3 text-fuchsia-400" />
+                  L'Arène Cognitive
+                </h2>
+                <span className="text-sm text-gray-500">Testez le RAG et les Paradigmes</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-400">Project ID</label>
+                  <input 
+                    type="text" 
+                    defaultValue="demo"
+                    id="projectIdInput"
+                    className="w-full bg-[#0b0f19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-400">Paradigme Cognitif</label>
+                  <select 
+                    value={paradigm}
+                    onChange={(e) => setParadigm(e.target.value)}
+                    className="w-full bg-[#0b0f19] border border-gray-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent outline-none"
+                  >
+                    <option value="executive">Executive (Direct, Concis)</option>
+                    <option value="socratic">Socratic (Questions)</option>
+                    <option value="analogy">Analogy (Comparaisons simples)</option>
+                    <option value="discovery">Discovery (Créatif, Exploratoire)</option>
+                    <option value="json_schema">JSON Schema (Données structurées)</option>
+                    <option value="pseudocode">Pseudo-code (Algorithme)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3 mb-6 p-4 bg-blue-900/10 border border-blue-500/20 rounded-lg">
+                <Shield className="h-5 w-5 text-blue-400" />
+                <span className="text-sm text-blue-200">Recherche Web (DuckDuckGo)</span>
+                <button 
+                  onClick={() => setWebSearch(!webSearch)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${webSearch ? 'bg-blue-500' : 'bg-gray-700'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${webSearch ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto mb-6 bg-[#0b0f19] border border-gray-800 rounded-lg p-6">
+                {loading ? (
+                  <div className="h-full flex flex-col items-center justify-center space-y-4">
+                    <Loader2 className="h-10 w-10 text-fuchsia-500 animate-spin" />
+                    <p className="text-fuchsia-400 font-medium animate-pulse">Les LLMs débattent... veuillez patienter</p>
+                  </div>
+                ) : result ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                      <h3 className="text-lg font-bold text-white">Résultat du Consensus</h3>
+                      {result.synthesizer && (
+                        <span className="text-xs bg-fuchsia-900/50 text-fuchsia-300 px-3 py-1 rounded-full border border-fuchsia-500/30">
+                          Juge Final : {result.synthesizer}
+                        </span>
+                      )}
+                    </div>
+                    {result.error ? (
+                      <div className="text-red-400 bg-red-900/10 p-4 rounded-lg border border-red-500/20 whitespace-pre-wrap">
+                        {result.error}
+                      </div>
+                    ) : (
+                      <div className="prose prose-invert prose-cyan max-w-none">
+                        <pre className="whitespace-pre-wrap font-sans text-gray-300 leading-relaxed bg-transparent p-0">
+                          {result.synthesis}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-gray-600 italic">
+                    Entrez une question et lancez le consensus pour voir le résultat.
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex items-center">
+                <input 
+                  type="text" 
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSynthesize()}
+                  placeholder="Posez votre question à la Tour de Contrôle..."
+                  className="w-full bg-[#0b0f19] border border-gray-700 rounded-xl pl-6 pr-32 py-4 text-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent outline-none"
+                />
+                <button 
+                  onClick={handleSynthesize}
+                  disabled={loading || !question.trim()}
+                  className="absolute right-2 px-6 py-2 bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Lancer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'ingestion' && (
+            <IngestionDashboard />
+          )}
+          
+          {activeTab === 'observatory' && (
+            <VectorObservatory />
+          )}
+
+        </div>
+      </main>
+    </div>
+  )
+}
+
+function VectorObservatory() {
+  const [projectId, setProjectId] = useState('demo')
+  const [stats, setStats] = useState<any>(null)
+  const [documents, setDocuments] = useState<string[]>([])
+  const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
+  const [docData, setDocData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+
+  const fetchProjectData = async () => {
+    if (!projectId) return
+    setLoading(true)
+    try {
+      const [inspectRes, docsRes] = await Promise.all([
+        fetch(`http://localhost:8000/projects/${projectId}/inspect`),
+        fetch(`http://localhost:8000/projects/${projectId}/documents`)
+      ])
+      
+      if (inspectRes.ok) {
+        const inspectData = await inspectRes.json()
+        setStats(inspectData.store)
+      }
+      
+      if (docsRes.ok) {
+        const docsData = await docsRes.json()
+        setDocuments(docsData.documents)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchDocumentData = async (docId: string) => {
+    setSelectedDoc(docId)
+    try {
+      const res = await fetch(`http://localhost:8000/projects/${projectId}/documents/${docId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setDocData(data)
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  useEffect(() => {
+    fetchProjectData()
+  }, [projectId])
+
+  return (
+    <div className="flex flex-col h-full relative z-10 p-6 overflow-y-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Database className="h-6 w-6 mr-3 text-fuchsia-400" />
+          Observatoire Vectoriel
+        </h2>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-400">Projet:</label>
+          <input 
+            type="text" 
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            className="bg-[#0b0f19] border border-gray-700 rounded-lg px-3 py-1 text-white text-sm focus:ring-1 focus:ring-fuchsia-500 outline-none"
+          />
+          <button onClick={fetchProjectData} className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-300">
+            <Activity className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-[#0b0f19] border border-gray-800 p-5 rounded-xl flex items-center justify-between">
+          <div>
+            <p className="text-gray-400 text-sm font-medium">Documents</p>
+            <p className="text-3xl font-bold text-white mt-1">{stats?.document_count || 0}</p>
+          </div>
+          <FileText className="h-10 w-10 text-gray-600" />
+        </div>
+        <div className="bg-[#0b0f19] border border-gray-800 p-5 rounded-xl flex items-center justify-between">
+          <div>
+            <p className="text-gray-400 text-sm font-medium">Chunks (Atomes)</p>
+            <p className="text-3xl font-bold text-cyan-400 mt-1">{stats?.total_chunks || 0}</p>
+          </div>
+          <BrainCircuit className="h-10 w-10 text-cyan-900/50" />
+        </div>
+        <div className="bg-[#0b0f19] border border-gray-800 p-5 rounded-xl flex items-center justify-between">
+          <div>
+            <p className="text-gray-400 text-sm font-medium">Chunks Canoniques</p>
+            <p className="text-3xl font-bold text-fuchsia-400 mt-1">{stats?.canonical_chunks || 0}</p>
+          </div>
+          <Layers className="h-10 w-10 text-fuchsia-900/50" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
+        <div className="lg:col-span-1 bg-[#0b0f19] border border-gray-800 rounded-xl flex flex-col h-96 lg:h-auto overflow-hidden">
+          <div className="p-4 border-b border-gray-800 bg-gray-900/50">
+            <h3 className="font-bold text-white text-sm uppercase tracking-wider">Explorateur</h3>
+          </div>
+          <div className="p-2 flex-1 overflow-y-auto">
+            {loading ? (
+              <p className="text-gray-500 p-4 text-sm">Chargement...</p>
+            ) : documents.length === 0 ? (
+              <p className="text-gray-500 p-4 text-sm">Aucun document ingéré.</p>
+            ) : (
+              documents.map(docId => (
+                <button
+                  key={docId}
+                  onClick={() => fetchDocumentData(docId)}
+                  className={`w-full text-left p-3 rounded-lg mb-1 text-sm truncate transition-colors ${selectedDoc === docId ? 'bg-fuchsia-900/30 text-fuchsia-300 border border-fuchsia-800/50' : 'text-gray-400 hover:bg-gray-800'}`}
+                >
+                  <FileText className="h-4 w-4 inline-block mr-2 opacity-70" />
+                  {docId}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="lg:col-span-3 bg-[#0b0f19] border border-gray-800 rounded-xl p-6 h-[600px] overflow-y-auto">
+          {docData ? (
+            <div className="space-y-6">
+              <div className="flex justify-between items-start border-b border-gray-800 pb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-white">Document {docData.document_id.substring(0, 8)}...</h3>
+                  <p className="text-sm text-gray-500 font-mono mt-1">{docData.document_id}</p>
+                </div>
+                <span className="bg-cyan-900/30 text-cyan-400 border border-cyan-800 px-3 py-1 rounded-full text-xs font-bold">
+                  {docData.chunks?.length || 0} Chunks
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                {docData.chunks?.map((chunk: any, i: number) => (
+                  <div key={chunk.id} className="bg-[#111827] border border-gray-800 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-mono text-gray-500">#{chunk.ordinal} • {chunk.id.substring(0, 8)}</span>
+                      {chunk.payload?.canonical_chunk_id && (
+                        <span className="text-xs text-orange-400 flex items-center">
+                          <Layers className="h-3 w-3 mr-1" />
+                          Double sémantique
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap font-mono bg-black/30 p-3 rounded border border-gray-800/50">
+                      {chunk.text}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-gray-600">
+              <Database className="h-12 w-12 mb-4 opacity-20" />
+              <p>Sélectionnez un document pour inspecter ses vecteurs</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function IngestionDashboard() {
+  const [file, setFile] = useState<File | null>(null)
+  const [projectId, setProjectId] = useState('demo')
+  const [chunkSize, setChunkSize] = useState(1024)
+  const [overlap, setOverlap] = useState(256)
+  const [advancedOcr, setAdvancedOcr] = useState(false)
+  const [orthogonalRotation, setOrthogonalRotation] = useState(false)
+  const [tags, setTags] = useState('')
+  const [ingesting, setIngesting] = useState(false)
+  const [ingestResult, setIngestResult] = useState<any>(null)
+
+  const handleUpload = async () => {
+    if (!file || !projectId.trim()) return
+    setIngesting(true)
+    setIngestResult(null)
+    
+    const formData = new FormData()
+    formData.append('project_id', projectId)
+    formData.append('chunk_size', chunkSize.toString())
+    formData.append('overlap', overlap.toString())
+    formData.append('advanced_ocr', advancedOcr.toString())
+    formData.append('orthogonal_rotation', orthogonalRotation.toString())
+    formData.append('tags', tags)
+    formData.append('file', file)
+
+    try {
+      const response = await fetch(`http://localhost:8000/projects/${projectId}/ingest`, {
+        method: 'POST',
+        body: formData
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        setIngestResult({ error: data.detail || 'Erreur serveur' })
+      } else {
+        setIngestResult(data)
+      }
+    } catch (err) {
+      setIngestResult({ error: "Erreur de communication avec l'API." })
+    } finally {
+      setIngesting(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full relative z-10">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Activity className="h-6 w-6 mr-3 text-cyan-400" />
+          Le Radar (Ingestion & OCR)
+        </h2>
+        <span className="text-sm text-gray-500">Ajout au système RAG</span>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pr-2">
+        {/* Paramètres d'ingestion */}
+        <div className="lg:col-span-1 space-y-6 bg-[#0b0f19] p-5 rounded-xl border border-gray-800 h-fit">
+          <h3 className="text-lg font-bold text-white border-b border-gray-800 pb-2">Réglages Avancés</h3>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-400">Projet Cible / Session</label>
+            <input 
+              type="text" 
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              className="w-full bg-[#111827] border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-1 focus:ring-cyan-500 outline-none text-sm"
+            />
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <label className="text-sm font-medium text-cyan-400 flex items-center">
+              Contrôle des Chunks (Atomes)
+            </label>
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Chunk Size</span>
+                <span>{chunkSize} chars</span>
+              </div>
+              <input type="range" min="100" max="8000" step="100" value={chunkSize} onChange={(e) => setChunkSize(Number(e.target.value))} className="w-full accent-cyan-500" />
+            </div>
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Overlap (Recouvrement)</span>
+                <span>{overlap} chars</span>
+              </div>
+              <input type="range" min="0" max="1000" step="50" value={overlap} onChange={(e) => setOverlap(Number(e.target.value))} className="w-full accent-cyan-500" />
+            </div>
+          </div>
+
+          <div className="space-y-2 pt-2 border-t border-gray-800">
+            <label className="text-sm font-medium text-gray-400">Tags Métadonnées (csv)</label>
+            <input 
+              type="text" 
+              placeholder="ex: finance, rapport, 2026"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              className="w-full bg-[#111827] border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-1 focus:ring-cyan-500 outline-none text-sm"
+            />
+          </div>
+
+          <div className="space-y-3 pt-2 border-t border-gray-800">
+            <label className="text-sm font-medium text-purple-400">Traitement Multimodal</label>
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input type="checkbox" checked={advancedOcr} onChange={(e) => setAdvancedOcr(e.target.checked)} className="form-checkbox h-4 w-4 text-purple-500 rounded border-gray-700 bg-[#111827]" />
+              <span className="text-sm text-gray-300">Force OCR (Dessins, Manuscrits)</span>
+            </label>
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input type="checkbox" checked={orthogonalRotation} onChange={(e) => setOrthogonalRotation(e.target.checked)} className="form-checkbox h-4 w-4 text-purple-500 rounded border-gray-700 bg-[#111827]" />
+              <span className="text-sm text-gray-300">Retournement Orthogonal (4 angles)</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Drag and drop / Status */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-[#0b0f19] border-2 border-dashed border-gray-700 hover:border-cyan-500/50 rounded-xl p-8 transition-colors flex flex-col items-center justify-center text-center h-48 relative">
+            <input 
+              type="file" 
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+              accept=".pdf,.png,.jpg,.jpeg,.md,.txt"
+            />
+            <Activity className="h-10 w-10 text-cyan-500/50 mb-3" />
+            <h3 className="text-lg font-medium text-white mb-1">
+              {file ? file.name : "Glissez-Déposez un document"}
+            </h3>
+            <p className="text-sm text-gray-500">
+              {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "Support PDF, Images, et Textes"}
+            </p>
+          </div>
+
+          <button 
+            onClick={handleUpload}
+            disabled={!file || ingesting}
+            className="w-full py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center"
+          >
+            {ingesting ? (
+              <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Ingestion en cours...</>
+            ) : "Lancer l'Ingestion Vectorielle"}
+          </button>
+
+          {ingestResult && (
+            <div className={`p-5 rounded-xl border ${ingestResult.error ? 'bg-red-900/10 border-red-500/20' : 'bg-emerald-900/10 border-emerald-500/20'}`}>
+              <h4 className={`font-bold mb-2 ${ingestResult.error ? 'text-red-400' : 'text-emerald-400'}`}>
+                {ingestResult.error ? "Échec de l'Ingestion" : "Ingestion Terminée"}
+              </h4>
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap overflow-auto max-h-48">
+                {JSON.stringify(ingestResult, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default App

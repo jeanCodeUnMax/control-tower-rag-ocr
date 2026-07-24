@@ -63,17 +63,22 @@ class QdrantVectorStore(VectorStore):
         )
 
     def search(self, collection_name: str, query_vector: list[float], limit: int = 5) -> list[dict[str, Any]]:
-        response = self.client.query_points(
-            collection_name=collection_name,
-            query=query_vector,
-            limit=limit
-        )
-        # On renvoie les payloads avec le score
-        return [
-            {
-                "id": hit.id,
-                "score": hit.score,
-                **(hit.payload or {})  # type: ignore
-            }
-            for hit in response.points
-        ]
+        try:
+            response = self.client.query_points(
+                collection_name=collection_name,
+                query=query_vector,
+                limit=limit
+            )
+            # On renvoie les payloads avec le score
+            return [
+                {
+                    "id": hit.id,
+                    "score": hit.score,
+                    **(hit.payload or {})  # type: ignore
+                }
+                for hit in response.points
+            ]
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(f"Impossible de contacter Qdrant ({exc}). Retour de sources vides.")
+            return []

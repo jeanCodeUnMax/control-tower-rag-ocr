@@ -133,7 +133,15 @@ class OllamaLLM:
                     raise RuntimeError(f"Ollama Error {response.status_code}: {response.text}")
                 result = response.json()
                 return result["message"]["content"]
+        except httpx.ConnectError:
+            return (
+                "🤖 **[MOCK LLM]** — *Ollama n'est pas détecté en arrière-plan (WinError 10061).* \n\n"
+                "Pour une vraie analyse de L'Arène, veuillez démarrer l'application Ollama sur votre machine.\n\n"
+                "En attendant, voici une synthèse factice pour valider que l'interface React et le backend communiquent parfaitement ! La requête a bien traversé le routeur, généré la trace d'exécution, et l'interface a réagi correctement."
+            )
         except Exception as exc:
+            if "10061" in str(exc):
+                 return "🤖 **[MOCK LLM]** — *Ollama n'est pas détecté en arrière-plan (WinError 10061).* \n\nPour une vraie analyse de L'Arène, veuillez démarrer l'application Ollama sur votre machine."
             raise RuntimeError(f"Erreur lors de la génération avec Ollama: {exc}")
 
 
