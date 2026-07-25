@@ -171,6 +171,57 @@ function App() {
                         <pre className="whitespace-pre-wrap font-sans text-gray-300 leading-relaxed bg-transparent p-0">
                           {result.synthesis}
                         </pre>
+                        
+                        {/* Affichage des sources vectorielles */}
+                        {result.rag_sources && result.rag_sources.length > 0 && (
+                          <div className="mt-6 pt-4 border-t border-gray-800">
+                            <h4 className="text-sm font-semibold text-cyan-400 mb-3 flex items-center">
+                              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                              Vecteurs extraits de la base (Qdrant/Zvec)
+                            </h4>
+                            <div className="space-y-2">
+                              {result.rag_sources.map((src: any, idx: number) => (
+                                <div key={idx} className="bg-gray-800/50 p-3 rounded text-xs border border-gray-700">
+                                  <div className="flex justify-between text-gray-400 mb-1">
+                                    <span className="font-mono text-cyan-500/70">{src.document_id}</span>
+                                    <span className="text-yellow-500/70">Score: {src.score.toFixed(2)}</span>
+                                  </div>
+                                  <p className="text-gray-300 italic">"{src.text_snippet}..."</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Action buttons */}
+                        <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-800">
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(result.synthesis)
+                            }}
+                            className="flex items-center px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-md transition-colors"
+                            title="Copier le texte"
+                          >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            Copier
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const blob = new Blob([result.synthesis], { type: 'text/markdown' })
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = `synthese_${new Date().toISOString().replace(/[:.]/g, '-')}.md`
+                              a.click()
+                              URL.revokeObjectURL(url)
+                            }}
+                            className="flex items-center px-3 py-1.5 bg-fuchsia-900/50 hover:bg-fuchsia-800/50 text-fuchsia-300 border border-fuchsia-500/30 text-sm rounded-md transition-colors"
+                            title="Télécharger en Markdown"
+                          >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            Enregistrer sous
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -222,6 +273,24 @@ function VectorObservatory() {
   const [selectedDoc, setSelectedDoc] = useState<string | null>(null)
   const [docData, setDocData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [isConsolidating, setIsConsolidating] = useState(false)
+
+  const handleConsolidate = async () => {
+    if (!projectId || isConsolidating) return
+    setIsConsolidating(true)
+    try {
+      const res = await fetch(`http://localhost:8000/projects/${projectId}/consolidate`, {
+        method: 'POST'
+      })
+      if (res.ok) {
+        await fetchProjectData()
+      }
+    } catch (err) {
+      console.error("Erreur de consolidation:", err)
+    } finally {
+      setIsConsolidating(false)
+    }
+  }
 
   const fetchProjectData = async () => {
     if (!projectId) return
@@ -265,6 +334,16 @@ function VectorObservatory() {
     fetchProjectData()
   }, [projectId])
 
+  const openDocumentFolder = async (docId: string) => {
+    try {
+      await fetch(`http://localhost:8000/projects/${projectId}/documents/${docId}/open`, {
+        method: 'POST'
+      })
+    } catch (err) {
+      console.error("Erreur ouverture dossier:", err)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full relative z-10 p-6 overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
@@ -283,6 +362,18 @@ function VectorObservatory() {
           <button onClick={fetchProjectData} className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-300">
             <Activity className="h-4 w-4" />
           </button>
+          <button 
+            onClick={handleConsolidate} 
+            disabled={isConsolidating}
+            className="ml-4 px-3 py-1.5 bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-400 border border-fuchsia-500/30 rounded-md text-sm font-medium transition-colors flex items-center"
+          >
+            {isConsolidating ? (
+              <Activity className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4 mr-2" />
+            )}
+            Nettoyer la base (Consolidation)
+          </button>
         </div>
       </div>
 
@@ -290,14 +381,14 @@ function VectorObservatory() {
         <div className="bg-[#0b0f19] border border-gray-800 p-5 rounded-xl flex items-center justify-between">
           <div>
             <p className="text-gray-400 text-sm font-medium">Documents</p>
-            <p className="text-3xl font-bold text-white mt-1">{stats?.document_count || 0}</p>
+            <p className="text-3xl font-bold text-white mt-1">{stats?.documents || 0}</p>
           </div>
           <FileText className="h-10 w-10 text-gray-600" />
         </div>
         <div className="bg-[#0b0f19] border border-gray-800 p-5 rounded-xl flex items-center justify-between">
           <div>
             <p className="text-gray-400 text-sm font-medium">Chunks (Atomes)</p>
-            <p className="text-3xl font-bold text-cyan-400 mt-1">{stats?.total_chunks || 0}</p>
+            <p className="text-3xl font-bold text-cyan-400 mt-1">{stats?.chunks || 0}</p>
           </div>
           <BrainCircuit className="h-10 w-10 text-cyan-900/50" />
         </div>
@@ -326,9 +417,10 @@ function VectorObservatory() {
                   key={docId}
                   onClick={() => fetchDocumentData(docId)}
                   className={`w-full text-left p-3 rounded-lg mb-1 text-sm truncate transition-colors ${selectedDoc === docId ? 'bg-fuchsia-900/30 text-fuchsia-300 border border-fuchsia-800/50' : 'text-gray-400 hover:bg-gray-800'}`}
+                  title={docId}
                 >
                   <FileText className="h-4 w-4 inline-block mr-2 opacity-70" />
-                  {docId}
+                  {docId.substring(0, 8)}...{docId.substring(docId.length - 8)}
                 </button>
               ))
             )}
@@ -339,11 +431,20 @@ function VectorObservatory() {
           {docData ? (
             <div className="space-y-6">
               <div className="flex justify-between items-start border-b border-gray-800 pb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-white">Document {docData.document_id.substring(0, 8)}...</h3>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-4">
+                    Document {docData.document_id.substring(0, 8)}...
+                    <button 
+                      onClick={() => openDocumentFolder(docData.document_id)}
+                      className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded border border-gray-700 transition-colors flex items-center"
+                    >
+                      <svg className="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                      Ouvrir le dossier
+                    </button>
+                  </h3>
                   <p className="text-sm text-gray-500 font-mono mt-1">{docData.document_id}</p>
                 </div>
-                <span className="bg-cyan-900/30 text-cyan-400 border border-cyan-800 px-3 py-1 rounded-full text-xs font-bold">
+                <span className="bg-cyan-900/30 text-cyan-400 border border-cyan-800 px-3 py-1 rounded-full text-xs font-bold shrink-0">
                   {docData.chunks?.length || 0} Chunks
                 </span>
               </div>
@@ -521,10 +622,34 @@ function IngestionDashboard() {
 
           {ingestResult && (
             <div className={`p-5 rounded-xl border ${ingestResult.error ? 'bg-red-900/10 border-red-500/20' : 'bg-emerald-900/10 border-emerald-500/20'}`}>
-              <h4 className={`font-bold mb-2 ${ingestResult.error ? 'text-red-400' : 'text-emerald-400'}`}>
-                {ingestResult.error ? "Échec de l'Ingestion" : "Ingestion Terminée"}
-              </h4>
-              <pre className="text-sm text-gray-300 whitespace-pre-wrap overflow-auto max-h-48">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className={`font-bold ${ingestResult.error ? 'text-red-400' : 'text-emerald-400'}`}>
+                  {ingestResult.error ? "Échec de l'Ingestion" : "Ingestion Terminée"}
+                </h4>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => navigator.clipboard.writeText(JSON.stringify(ingestResult, null, 2))} 
+                    className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded border border-gray-600 transition-colors"
+                  >
+                    Copier JSON
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const blob = new Blob([JSON.stringify(ingestResult, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `ingestion_report_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }} 
+                    className="text-xs bg-emerald-900/50 hover:bg-emerald-800/80 text-emerald-300 px-3 py-1 rounded border border-emerald-700/50 transition-colors"
+                  >
+                    Sauvegarder JSON
+                  </button>
+                </div>
+              </div>
+              <pre className="text-sm text-gray-300 whitespace-pre-wrap overflow-auto max-h-48 mt-2">
                 {JSON.stringify(ingestResult, null, 2)}
               </pre>
             </div>

@@ -8,7 +8,10 @@ from control_tower.domain.models import AtomicChunk
 
 
 def _sentences(text: str) -> list[str]:
-    return [item.strip() for item in re.split(r"(?<=[.!?])\s+|\n+", text) if item.strip()]
+    # On nettoie d'abord les retours à la ligne simples (qui coupent les phrases au milieu)
+    # On garde les doubles retours à la ligne comme séparateurs de paragraphes
+    clean_text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
+    return [item.strip() for item in re.split(r"(?<=[.!?])\s+|\n\n+", clean_text) if item.strip()]
 
 
 def _tail_on_word_boundary(text: str, max_chars: int) -> str:

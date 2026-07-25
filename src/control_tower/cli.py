@@ -143,6 +143,14 @@ def plan_document(
     output(ControlTowerService().plan_document(project, source))
 
 
+@app.command("consolidate")
+def consolidate(
+    project: str = typer.Option(..., "--project", "-p"),
+) -> None:
+    """Déduplique globalement les chunks et les assets sur l'ensemble du projet."""
+    output(ControlTowerService().consolidate_project(project))
+
+
 @app.command("benchmark-vision")
 def benchmark_vision(
     source: Path = typer.Argument(...),
@@ -181,9 +189,22 @@ def inspect_document(
 @app.command("vectorize")
 def vectorize(
     project: str = typer.Option(..., "--project", "-p"),
+    database: str = typer.Option(
+        None,
+        "--database",
+        "-db",
+        help="Base de données (zvec ou qdrant_local)",
+    ),
 ) -> None:
     """Génère les embeddings pour les chunks non vectorisés et les insère dans le Vector Store."""
-    output(ControlTowerService().vectorize_project(project))
+    if not database:
+        import rich.prompt
+        database = rich.prompt.Prompt.ask(
+            "Dans quelle base de données voulez-vous injecter les vecteurs ?",
+            choices=["zvec", "qdrant_local"],
+            default="zvec"
+        )
+    output(ControlTowerService().vectorize_project(project, database=database))
 
 
 @app.command("ask")
@@ -191,9 +212,22 @@ def ask(
     project: str = typer.Option(..., "--project", "-p"),
     question: str = typer.Argument(..., help="La question à poser à l'IA."),
     top_k: int = typer.Option(5, "--top-k", "-k", help="Nombre de documents à récupérer."),
+    database: str = typer.Option(
+        None,
+        "--database",
+        "-db",
+        help="Base de données (zvec ou qdrant_local)",
+    ),
 ) -> None:
     """Pose une question au système (RAG) en s'appuyant sur les documents ingérés."""
-    result = ControlTowerService().ask_project(project, question, top_k)
+    if not database:
+        import rich.prompt
+        database = rich.prompt.Prompt.ask(
+            "Quelle base de données interroger ?",
+            choices=["zvec", "qdrant_local"],
+            default="zvec"
+        )
+    result = ControlTowerService().ask_project(project, question, top_k, database=database)
     
     if "answer" in result and "sources" in result:
         try:
@@ -346,6 +380,18 @@ def synthesize(
             title="Consensus LLM",
             border_style="green"
         ))
+        
+        # Affichage des sources issues de la base vectorielle
+        sources = result.get("rag_sources", [])
+        if sources:
+            console.print("\n[bold blue]📚 VECTEURS EXTRAITS DE LA BASE (Qdrant/Zvec) :[/bold blue]")
+            for i, src in enumerate(sources, 1):
+                doc_id = src.get("document_id", "Inconnu")
+                score = src.get("score", 0.0)
+                text = src.get("text_snippet", "").replace('\n', ' ').strip()
+                console.print(f" [bold blue]{i}.[/bold blue] [yellow][Pertinence: {score:.2f}][/yellow] [cyan]Document: {doc_id}[/cyan]\n    [italic dim]\"{text}...\"[/italic dim]")
+        elif not web:
+            console.print("\n[yellow]⚠️ La base de données vectorielle n'a retourné aucun fragment pertinent pour cette question.[/yellow]")
         
     except ImportError:
         result = ControlTowerService().synthesize_llms(project, question, output_file, top_k, use_web_search=web, paradigm=paradigm)

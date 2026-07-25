@@ -9,10 +9,7 @@ from control_tower.config import BatchConfig, OCRConfig
 from control_tower.ocr.models import ExtractedPage, ExtractionMethod, ExtractionResult
 from control_tower.ocr.tesseract import (
     ImageToTextEngine,
-    TesseractEngine,
     prepare_image,
-    resolve_tesseract_executable,
-    tesseract_config,
 )
 from control_tower.processing.models import PageProfile
 
@@ -116,26 +113,26 @@ class PDFOCRProvider:
                     continue
 
                 try:
-                    ocr_text, blocks, width, height = self._ocr_page_structured(page, config)
+                    ocr_text, blocks, width, height, extraction_method = self._ocr_page_structured(page, config, source, page_number)
                     page_warnings: list[str] = []
                     if not ocr_text:
-                        message = f"Page {page_number}: L'OCR n'a détecté aucun texte."
+                        message = f"Page {page_number}: L'extraction native avancée/OCR n'a détecté aucun texte."
                         warnings.append(message)
                         page_warnings.append(message)
                     pages.append(
                         ExtractedPage(
                             page_number=page_number,
                             text=ocr_text,
-                            method=ExtractionMethod.TESSERACT_PDF if getattr(config, "engine", "tesseract") == "tesseract" else ExtractionMethod.TESSERACT_IMAGE,
+                            method=extraction_method,
                             width=width,
                             height=height,
                             warnings=page_warnings,
                             blocks=blocks,
                         )
                     )
-                except RuntimeError as exc:
+                except Exception as exc:
                     if native_text:
-                        message = f"Page {page_number}: Tesseract indisponible ({exc}), bascule sur le texte natif."
+                        message = f"Page {page_number}: Erreur d'extraction de secours ({exc}), bascule sur le texte natif."
                         warnings.append(message)
                         pages.append(
                             ExtractedPage(
@@ -179,30 +176,97 @@ class PDFOCRProvider:
         compact = "".join(native_text.split())
         return len(compact) >= config.min_native_chars_per_page
 
-    def _ocr_page_structured(self, page: fitz.Page, config: OCRConfig) -> tuple[str, list["LayoutBlock"], int, int]:
+    def _ocr_page_structured(self, page: fitz.Page, config: OCRConfig, source: Path | None = None, page_number: int | None = None) -> tuple[str, list["LayoutBlock"], int, int, ExtractionMethod]:
         from control_tower.ocr.layout import LayoutBlock
-        
-        zoom = config.dpi / 72
-        pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
-        image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
-        prepared = prepare_image(image, config)
         
         # Choix du moteur OCR
         if getattr(config, "engine", "tesseract") == "paddle":
+            zoom = config.dpi / 72
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+            image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+            prepared = prepare_image(image, config)
             from control_tower.ocr.paddle_engine import PaddleOCREngine
             engine = self.engine or PaddleOCREngine(
                 lang=getattr(config, "paddle_lang", "fr"),
                 use_gpu=getattr(config, "paddle_use_gpu", False)
             )
-            # PaddleOCR via extract_structured
             blocks = engine.extract_structured(prepared, lang="", config="")
-        else:
-            engine = self.engine or TesseractEngine(resolve_tesseract_executable(config))
-            blocks = engine.extract_structured(
-                prepared,
-                lang=config.languages,
-                config=tesseract_config(config),
-            )
+            text = "\n".join(b.text for b in blocks if b.text).strip()
+            return text, blocks, prepared.width, prepared.height, ExtractionMethod.TESSERACT_IMAGE
             
-        text = "\n".join(b.text for b in blocks if b.text).strip()
-        return text, blocks, prepared.width, prepared.height
+        elif config.mode == "force_ocr":
+            # On force l'OCR complet (ex: document très manuscrit)
+            zoom = config.dpi / 72
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+            image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+            prepared = prepare_image(image, config)
+            from control_tower.ocr.tesseract import TesseractEngine
+            engine = self.engine or TesseractEngine(executable=config.tesseract_cmd)
+            blocks = engine.extract_structured(prepared, lang=config.languages, config="")
+            text = "\n".join(b.text for b in blocks if b.text).strip()
+            return text, blocks, prepared.width, prepared.height, ExtractionMethod.TESSERACT_PDF
+            
+        else:
+            # Extraction de blocs natifs via PyMuPDF (Hybride par défaut)
+            blocks_data = page.get_text("blocks")
+            blocks = []
+            for index, b in enumerate(blocks_data):
+                if b[6] == 0:  # block_type 0 = text
+                    text = b[4].strip()
+                    if text:
+                        blocks.append(LayoutBlock(
+                            index=index,
+                            text=text,
+                            x0=int(b[0]), y0=int(b[1]), x1=int(b[2]), y1=int(b[3]),
+                            confidence=100.0,
+                        ))
+            text = "\n\n".join(b.text for b in blocks if b.text).strip()
+            
+            # Enrichissement avec pdfplumber pour l'extraction de tableaux
+            if source and page_number:
+                try:
+                    import pdfplumber
+                    with pdfplumber.open(source) as pdf:
+                        if page_number - 1 < len(pdf.pages):
+                            plumber_page = pdf.pages[page_number - 1]
+                            tables = plumber_page.extract_tables()
+                            if tables:
+                                table_texts = []
+                                for table in tables:
+                                    if not table or not table[0]: continue
+                                    header = table[0]
+                                    md = "| " + " | ".join(str(c).replace('\n', ' ') if c is not None else "" for c in header) + " |\n"
+                                    md += "|" + "|".join("---" for _ in header) + "|\n"
+                                    for row in table[1:]:
+                                        md += "| " + " | ".join(str(c).replace('\n', ' ') if c is not None else "" for c in row) + " |\n"
+                                    table_texts.append(md)
+                                md_tables = "\n\n".join(table_texts)
+                                if text:
+                                    text += "\n\n[TABLEAUX EXTRAITS]\n" + md_tables
+                                else:
+                                    text = "[TABLEAUX EXTRAITS]\n" + md_tables
+                                blocks.append(LayoutBlock(
+                                    index=len(blocks),
+                                    text=md_tables,
+                                    x0=0, y0=0, x1=int(page.rect.width), y1=int(page.rect.height),
+                                    confidence=100.0,
+                                ))
+                except ImportError:
+                    pass
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"pdfplumber n'a pas pu extraire les tableaux : {e}")
+                    
+            if not text.strip():
+                # Fallback Tesseract OCR si l'extraction native n'a rien trouvé (ex: PDF scanné sans texte natif)
+                zoom = config.dpi / 72
+                pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False)
+                image = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+                prepared = prepare_image(image, config)
+                from control_tower.ocr.tesseract import TesseractEngine
+                engine = self.engine or TesseractEngine(executable=config.tesseract_cmd)
+                blocks = engine.extract_structured(prepared, lang=config.languages, config="")
+                text = "\n".join(b.text for b in blocks if b.text).strip()
+                return text, blocks, prepared.width, prepared.height, ExtractionMethod.TESSERACT_PDF
+
+            return text, blocks, int(page.rect.width), int(page.rect.height), ExtractionMethod.NATIVE_PDF

@@ -40,9 +40,115 @@ class ControlTowerService:
             "config": self.workspace.load_config(project_id).model_dump(mode="json"),
         }
 
-    def ingest(self, project_id: str, source: Path) -> dict:
+    def ingest(self, project_id: str, source: Path, allow_review: bool = False) -> dict:
         self.workspace.require(project_id)
-        return self.ingestion.ingest(project_id, source).model_dump(mode="json")
+        result = self.ingestion.ingest(project_id, source, allow_review=allow_review).model_dump(mode="json")
+        
+        # Si une ancienne version a été écrasée, on purge ses vecteurs
+        replaced_document_id = result.get("data", {}).get("replaced_document_id")
+        if replaced_document_id:
+            import logging
+            logger = logging.getLogger(__name__)
+            from control_tower.storage.vector import QdrantVectorStore, ZvecRestStore
+            
+            # Nom de collection par défaut (souvent knowledge ou project_id)
+            # Dans vectorize_project, la collection est project_id
+            collection_name = project_id
+            
+            for store_cls in (QdrantVectorStore, ZvecRestStore):
+                try:
+                    vs = store_cls(path=str(self.workspace.path_for(project_id) / "state" / "qdrant_db")) if store_cls is QdrantVectorStore else store_cls()
+                    vs.delete_by_document_id(collection_name, replaced_document_id)
+                except Exception as e:
+                    logger.warning(f"Impossible de purger l'ancienne version sur {store_cls.__name__} : {e}")
+                    
+        # Si l'ingestion est un succès, on déclenche les phases finales automatiques
+        if result.get("status") == "ok":
+            import logging
+            logger = logging.getLogger(__name__)
+            
+            # 1. Vectorisation automatique (Qdrant Local par défaut dans ce mode)
+            try:
+                logger.info("Démarrage de la vectorisation automatique...")
+                vector_res = self.vectorize_project(project_id, database="qdrant_local")
+                result["vectorization"] = vector_res
+            except Exception as e:
+                logger.error(f"Erreur vectorisation: {e}")
+                result["vectorization"] = {"status": "error", "message": str(e)}
+                
+            # 2. Test final dans l'Arène
+            try:
+                logger.info("Lancement du test QA automatique dans l'Arène...")
+                qa_res = self.ask_project(
+                    project_id, 
+                    f"Fais une très brève synthèse des concepts clés abordés dans {source.name}.",
+                    database="qdrant_local"
+                )
+                result["auto_qa_test"] = qa_res
+            except Exception as e:
+                logger.error(f"Erreur QA test: {e}")
+                result["auto_qa_test"] = {"status": "error", "message": str(e)}
+                
+        return result
+
+    def consolidate_project(self, project_id: str) -> dict:
+        import json
+        from control_tower.optimization.consolidator import Consolidator
+        from control_tower.processing.models import VisualAsset
+        
+        self.workspace.require(project_id)
+        config = self.workspace.load_config(project_id)
+        store = SQLiteStore(self.workspace.path_for(project_id) / "state" / "knowledge.db")
+        
+        all_chunks = store.all_chunks()
+        
+        artifacts_dir = self.workspace.path_for(project_id) / "artifacts"
+        all_assets = []
+        asset_files = list(artifacts_dir.glob("*/visual_assets.json"))
+        for asset_file in asset_files:
+            try:
+                data = json.loads(asset_file.read_text(encoding="utf-8"))
+                for asset_data in data:
+                    all_assets.append(VisualAsset.model_validate(asset_data))
+            except Exception:
+                pass
+                
+        consolidator = Consolidator(config=config.consolidation)
+        updated_chunks, updated_assets, stats = consolidator.consolidate(all_chunks, all_assets)
+        
+        store.replace_all_chunks(updated_chunks)
+        
+        from collections import defaultdict
+        assets_by_doc = defaultdict(list)
+        for asset in updated_assets:
+            assets_by_doc[asset.document_id].append(asset)
+            
+        for doc_id, doc_assets in assets_by_doc.items():
+            asset_file = artifacts_dir / doc_id / "visual_assets.json"
+            if asset_file.exists():
+                asset_file.write_text(json.dumps([a.model_dump(mode="json") for a in doc_assets], ensure_ascii=False, indent=2))
+                
+        # Supprimer les doublons des bases vectorielles
+        from control_tower.domain.models import DuplicateKind
+        from control_tower.storage.vector import QdrantVectorStore, ZvecRestStore
+        
+        duplicate_ids = [
+            c.id for c in updated_chunks 
+            if c.duplicate_kind != DuplicateKind.CANONICAL and c.canonical_id and c.canonical_id != c.id
+        ]
+        if duplicate_ids:
+            for store_cls in (QdrantVectorStore, ZvecRestStore):
+                try:
+                    vs = store_cls(url="local") if store_cls is QdrantVectorStore else store_cls()
+                    vs.delete(project_id, duplicate_ids)
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Impossible de supprimer les doublons sur {store_cls.__name__} : {e}")
+                
+        return {
+            "project_id": project_id,
+            "consolidation_stats": stats
+        }
 
     def query(self, project_id: str, text: str, top_k: int | None = None) -> dict:
         self.workspace.require(project_id)
@@ -508,26 +614,29 @@ class ControlTowerService:
             "capabilities": [capability.__dict__ for capability in self.registry.list()],
         }
 
-    def vectorize_project(self, project_id: str) -> dict:
+    def vectorize_project(self, project_id: str, database: str = "zvec") -> dict:
         """Génère les embeddings et les insère dans le Vector Store."""
         self.workspace.require(project_id)
         config = self.workspace.load_config(project_id)
         project_path = self.workspace.path_for(project_id)
         
         from control_tower.semantics.embeddings import get_embedding_provider
-        from control_tower.storage.vector import QdrantVectorStore
+        from control_tower.storage.vector import QdrantVectorStore, ZvecRestStore
         
         # Initialiser le provider d'embeddings
+        provider_type = "zvec" if database == "zvec" else config.embeddings.provider
         embedder = get_embedding_provider(
-            provider_type=config.embeddings.provider,
+            provider_type=provider_type,
             model_name=config.embeddings.model
         )
         
-        # Initialiser le store vectoriel
-        if config.vector_store.engine == "qdrant":
-            vector_store = QdrantVectorStore(url=config.vector_store.url)
+        # Initialiser le store vectoriel (Anti-Fragile)
+        if database == "zvec":
+            vector_store = ZvecRestStore(url="http://localhost:8001")
+        elif database == "qdrant_local":
+            vector_store = QdrantVectorStore(path=str(project_path / "state" / "qdrant_db"), url=config.vector_store.url)
         else:
-            raise ValueError(f"Moteur vectoriel non supporté: {config.vector_store.engine}")
+            raise ValueError(f"Base de données non supportée: {database}")
             
         store = SQLiteStore(project_path / "state" / "knowledge.db")
         
@@ -566,33 +675,37 @@ class ControlTowerService:
             "vector_store": config.vector_store.engine
         }
 
-    def ask_project(self, project_id: str, question: str, top_k: int = 5) -> dict:
+    def ask_project(self, project_id: str, question: str, top_k: int = 5, database: str = "zvec", paradigm: str = "executive") -> dict:
         """Pose une question au RAG du projet."""
         self.workspace.require(project_id)
         config = self.workspace.load_config(project_id)
         
         from control_tower.semantics.embeddings import get_embedding_provider
-        from control_tower.storage.vector import QdrantVectorStore
+        from control_tower.storage.vector import QdrantVectorStore, ZvecRestStore
         from control_tower.generation.llm import get_llm_provider
         from control_tower.retrieval.rag import RAGEngine
         
         # Initialiser les briques
+        provider_type = "zvec" if database == "zvec" else config.embeddings.provider
         embedder = get_embedding_provider(
-            provider_type=config.embeddings.provider,
+            provider_type=provider_type,
             model_name=config.embeddings.model
         )
         
-        if config.vector_store.engine == "qdrant":
-            vector_store = QdrantVectorStore(url=config.vector_store.url)
+        project_path = self.workspace.path_for(project_id)
+        if database == "zvec":
+            vector_store = ZvecRestStore(url="http://localhost:8001")
+        elif database == "qdrant_local":
+            vector_store = QdrantVectorStore(path=str(project_path / "state" / "qdrant_db"), url=config.vector_store.url)
         else:
-            raise ValueError(f"Moteur vectoriel non supporté: {config.vector_store.engine}")
+            raise ValueError(f"Base de données non supportée: {database}")
             
         llm = get_llm_provider(
             provider_type=config.llm.provider,
             config_obj=config.llm,
             model_name=config.llm.model,
             api_key_env=config.llm.api_key_env,
-            temperature=config.llm.temperature
+            temperature=0.1 if paradigm == "executive" else config.llm.temperature
         )
         
         rag = RAGEngine(
@@ -602,7 +715,7 @@ class ControlTowerService:
             collection_name=config.vector_store.collection_name
         )
         
-        return rag.ask(question=question, top_k=top_k)
+        return rag.ask(question=question, top_k=top_k, paradigm=paradigm)
 
     def compare_llms(self, project_id: str, question: str, top_k: int = 5) -> dict:
         """Compare les réponses de plusieurs LLMs en parallèle pour la même question."""
@@ -621,8 +734,9 @@ class ControlTowerService:
             model_name=config.embeddings.model
         )
         
+        project_path = self.workspace.path_for(project_id)
         if config.vector_store.engine == "qdrant":
-            vector_store = QdrantVectorStore(url=config.vector_store.url)
+            vector_store = QdrantVectorStore(path=str(project_path / "state" / "qdrant_db"), url=config.vector_store.url)
         else:
             raise ValueError(f"Moteur vectoriel non supporté: {config.vector_store.engine}")
             
@@ -767,25 +881,31 @@ class ControlTowerService:
             
         user_prompt += "\n\nRédige maintenant ta réponse finale au format Markdown, en appliquant strictement ton paradigme."
         
-        # 4. Trouver la config de Mistral Large
+        # 4. Trouver la config du Synthétiseur (Mistral par défaut, sinon Ollama)
         config = self.workspace.load_config(project_id)
-        mistral_config = next((p for p in config.llm.providers if p.kind == "mistral"), None)
         
-        if not mistral_config:
-            mistral_config = next((p for p in config.llm.providers if p.enabled), None)
-            
-        if not mistral_config:
-            mistral_config = config.llm.providers[0] if config.llm.providers else None
-            
-        if not mistral_config:
+        mistral_config = next((p for p in config.llm.providers if p.kind == "mistral"), None)
+        has_mistral_key = bool(os.getenv("MISTRAL_API_KEY"))
+        
+        if mistral_config and has_mistral_key:
+            synth_config = mistral_config
+        else:
+            # Fallback sur ollama
+            synth_config = next((p for p in config.llm.providers if p.kind == "ollama"), None)
+            if not synth_config:
+                synth_config = next((p for p in config.llm.providers if p.enabled), None)
+            if not synth_config:
+                synth_config = config.llm.providers[0] if config.llm.providers else None
+                
+        if not synth_config:
             raise ValueError("Impossible de trouver un modèle pour réaliser la synthèse.")
             
         # 5. Appeler le synthétiseur avec la température à presque 0 pour brider la créativité
         llm = get_llm_provider(
-            provider_type=mistral_config.kind,
+            provider_type=synth_config.kind,
             config_obj=config.llm,
-            model_name=mistral_config.model,
-            api_key_env=mistral_config.api_key_env,
+            model_name=synth_config.model,
+            api_key_env=synth_config.api_key_env,
             temperature=0.1 # <--- STRICT GROUNDING : On bride la créativité au maximum
         )
         
@@ -800,5 +920,7 @@ class ControlTowerService:
             "output_file": os.path.abspath(output_file),
             "sources_used": len(valid_answers),
             "web_sources": web_sources_count,
-            "synthesizer": f"{mistral_config.name} ({mistral_config.model})"
+            "synthesizer": f"{synth_config.name} ({synth_config.model})",
+            "synthesis": final_answer,
+            "rag_sources": compare_result.get("sources", [])
         }

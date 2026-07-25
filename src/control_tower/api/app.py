@@ -113,17 +113,14 @@ async def ingest_upload(
         from control_tower.config import write_project_config
         write_project_config(service.workspace.config_path(project_id), config)
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix) as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            tmp_path = Path(tmp.name)
-            
-        result = service.ingest(project_id, tmp_path)
-        
-        # Clean up
-        try:
-            tmp_path.unlink()
-        except:
-            pass
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Sécuriser le nom du fichier
+            safe_filename = Path(file.filename).name
+            tmp_path = Path(tmpdir) / safe_filename
+            with open(tmp_path, "wb") as f:
+                shutil.copyfileobj(file.file, f)
+                
+            result = service.ingest(project_id, tmp_path)
             
         return result
     except ValueError as exc:
@@ -138,6 +135,12 @@ def ingest(request: IngestRequest) -> dict:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+@app.post("/projects/{project_id}/consolidate")
+def consolidate_api(project_id: str) -> dict:
+    try:
+        return service.consolidate_project(project_id)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 @app.post("/plan-document")
 def plan_document(request: DocumentPlanRequest) -> dict:
@@ -228,6 +231,56 @@ def inspect_document(project_id: str, document_id: str) -> dict:
         return service.inspect_document(project_id, document_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+@app.post("/projects/{project_id}/documents/{document_id}/open")
+def open_document_folder(project_id: str, document_id: str) -> dict:
+    try:
+        service.workspace.require(project_id)
+        docs_dir = service.workspace.path_for(project_id) / "documents"
+        if not docs_dir.exists():
+            raise HTTPException(status_code=404, detail="Dossier documents introuvable")
+        
+        target_path = None
+        # 1. Chercher dans documents/ (fichiers originaux ou sous-dossiers anti-fragiles)
+        if docs_dir.exists():
+            for path in docs_dir.iterdir():
+                if document_id in path.name:
+                    target_path = path
+                    break
+                    
+        # 2. Chercher dans artifacts/ (extractions JSON, assets) si pas trouvé dans documents/
+        if not target_path:
+            artifact_dir = service.workspace.path_for(project_id) / "artifacts" / document_id
+            if artifact_dir.exists():
+                target_path = artifact_dir
+
+        if not target_path:
+            raise HTTPException(status_code=404, detail="Dossier du document introuvable")
+            
+        import os
+        import platform
+        import subprocess
+        
+        if platform.system() == "Windows":
+            if target_path.is_file():
+                subprocess.Popen(['explorer', '/select,', str(target_path)])
+            else:
+                os.startfile(target_path)
+        elif platform.system() == "Darwin":
+            if target_path.is_file():
+                subprocess.Popen(["open", "-R", str(target_path)])
+            else:
+                subprocess.Popen(["open", str(target_path)])
+        else:
+            if target_path.is_file():
+                subprocess.Popen(["xdg-open", str(target_path.parent)])
+            else:
+                subprocess.Popen(["xdg-open", str(target_path)])
+            
+        return {"status": "ok", "path": str(target_path)}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
 
 
 @app.get("/projects/{project_id}/inspect")

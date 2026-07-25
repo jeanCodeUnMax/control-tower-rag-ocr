@@ -48,6 +48,8 @@ class LocalEmbeddingProvider(EmbeddingProvider):
             if hf_token and hf_token.startswith("hf_"):
                 try:
                     from huggingface_hub import login
+                    import logging
+                    logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
                     login(token=hf_token)
                 except Exception as e:
                     print(f"⚠️ Erreur d'authentification HuggingFace (Token ignoré) : {e}")
@@ -60,25 +62,41 @@ class LocalEmbeddingProvider(EmbeddingProvider):
             ) from exc
 
     def embed_text(self, text: str) -> list[float]:
-        vector = self.model.encode(text)
+        vector = self.model.encode(text, show_progress_bar=False)
         return vector.tolist()
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        vectors = self.model.encode(texts)
+        vectors = self.model.encode(texts, show_progress_bar=False)
         return vectors.tolist()
         
     @property
     def dimension(self) -> int:
-        return self.model.get_sentence_embedding_dimension()
+        return self.model.get_embedding_dimension()
 
+
+class HephaistosBridgeProvider(EmbeddingProvider):
+    """Provider factice : l'embedding est déporté au serveur MCP Zvec."""
+    
+    def __init__(self, dimension: int = 384) -> None:
+        self._dimension = dimension
+        
+    def embed_text(self, text: str) -> list[float]:
+        return []
+        
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        return [[] for _ in texts]
+        
+    @property
+    def dimension(self) -> int:
+        return self._dimension
 
 def get_embedding_provider(provider_type: str, model_name: str, **kwargs: Any) -> EmbeddingProvider:
-    """
-    Factory pour obtenir le bon provider d'embeddings.
-    provider_type: 'local', 'gemini', 'openrouter', 'mistral'
-    """
+    """Factory pour obtenir le bon provider d'embeddings."""
     if provider_type == "local":
         return LocalEmbeddingProvider(model_name)
-    # Les autres providers (API) nécessiteront une implémentation réseau via httpx
-    # Pour l'instant, on lève une NotImplementedError pour indiquer le reste du travail.
+    if provider_type == "zvec":
+        return HephaistosBridgeProvider(dimension=384)
+    if provider_type == "qdrant_bridge":
+        return HephaistosBridgeProvider(dimension=1536)
+        
     raise NotImplementedError(f"Le provider d'embedding '{provider_type}' n'est pas encore totalement implémenté.")

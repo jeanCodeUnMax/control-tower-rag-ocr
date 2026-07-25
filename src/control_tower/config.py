@@ -215,6 +215,7 @@ class FeatureConfig(BaseModel):
     pseudocode: bool = True
     maieutic: bool = True
     kant_glove: bool = True
+    reflection: bool = True
     consensusless: bool = False
     background_consolidation: bool = False
 

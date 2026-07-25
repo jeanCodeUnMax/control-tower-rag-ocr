@@ -1,29 +1,13 @@
 <!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Control Tower RAG</title>
-  <style>
-    body{font-family:system-ui,sans-serif;max-width:1100px;margin:0 auto;padding:24px;background:#10131a;color:#eef2ff}
-    h1{margin-bottom:4px} .muted{color:#aab4cc}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-    section{background:#181e29;border:1px solid #2b3548;border-radius:12px;padding:16px}label{display:block;margin-top:10px}
-    input,select,textarea,button{width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border-radius:8px;border:1px solid #3a4660;background:#0f141d;color:#eef2ff}
-    button{cursor:pointer;background:#344a7a;font-weight:700}pre{white-space:pre-wrap;background:#0b0f16;padding:14px;border-radius:10px;min-height:130px;overflow:auto}
-  </style>
-</head>
-<body>
-  <h1>Control Tower RAG</h1><p class="muted">Pilotage local du service documentaire.</p>
-  <div class="grid">
-    <section><h2>Santé</h2><button onclick="call('/health')">Vérifier</button></section>
-    <section><h2>Créer un projet</h2><label>Project ID<input id="project" value="demo"></label><label>Nom<input id="name" value="Projet Demo"></label><button onclick="post('/projects',{project_id:v('project'),name:v('name')})">Créer</button></section>
-    <section><h2>Planifier / ingérer</h2><label>Chemin serveur du document<input id="source" placeholder="C:/Documents/manuel.pdf"></label><button onclick="post('/plan-document',{project_id:v('project'),source_path:v('source')})">Préflight</button><button onclick="post('/ingest',{project_id:v('project'),source_path:v('source')})">Ingérer</button></section>
-    <section><h2>Interroger</h2><label>Question<textarea id="question">Résume le document.</textarea></label><label>Top K<input id="topk" type="number" value="5"></label><button onclick="post('/query',{project_id:v('project'),text:v('question'),top_k:Number(v('topk'))})">Rechercher</button></section>
-  </div>
-  <h2>Résultat</h2><pre id="out">Prêt.</pre>
-<script>
-const out=document.getElementById('out'); const v=id=>document.getElementById(id).value;
-async function call(path,opts={}){out.textContent='Chargement…';try{const r=await fetch(path,opts);const t=await r.text();out.textContent=t?JSON.stringify(JSON.parse(t),null,2):`HTTP ${r.status}`;}catch(e){out.textContent=String(e)}}
-function post(path,data){return call(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})}
-</script>
-</body></html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>frontend</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

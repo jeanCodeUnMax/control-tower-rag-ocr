@@ -1,0 +1,8 @@
+Ceci est la première page de notre document de test.
+Il s'agit du test d'écrasement dynamique (Identity Hash).
+Nous allons l'ingérer une première fois.
+Puis nous ajouterons une ligne à la fin du fichier, et nous l'ingérerons une seconde fois.
+Le système devra détecter qu'il s'agit du même document, écraser l'ancien et purger ses vecteurs.
+"Ceci est la V2 du document, je viens de corriger une coquille
+
+Ceci est la V2 du document, je viens de corriger une coquille.

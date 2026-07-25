@@ -34,6 +34,90 @@ class IngestionPipeline:
         self.brain = Brain()
 
     def ingest(self, project_id: str, source: Path, allow_review: bool = False) -> ModuleResult:
+        import hashlib
+        import json
+        import shutil
+        
+        project_path = self.workspace.path_for(project_id)
+        docs_dir = project_path / "documents"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        
+        file_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+        
+        # Calcul de l'identity_hash (2 premières pages si PDF, sinon début du fichier)
+        identity_text = ""
+        if source.suffix.lower() == ".pdf":
+            try:
+                import fitz
+                with fitz.open(source) as document:
+                    for i in range(min(2, document.page_count)):
+                        identity_text += document[i].get_text("text")
+            except Exception:
+                pass
+                
+        if not identity_text.strip():
+            # Fallback sur les premiers 250 octets du fichier pour éviter qu'une modif à la fin 
+            # d'un tout petit fichier (comme notre test) ne change l'Identity Hash.
+            text_preview = source.read_bytes()[:250].decode(errors="ignore")
+            identity_text = f"{source.name}:::{text_preview}"
+            
+        import re
+        normalized_identity = re.sub(r'\s+', '', identity_text).lower()
+        identity_hash = hashlib.sha256(normalized_identity.encode("utf-8")).hexdigest()
+        
+        duplicate_path = None
+        replaced_document_id = None
+        replaced_document_folder = None
+        
+        for existing_doc in docs_dir.iterdir():
+            if existing_doc.is_dir():
+                metadata_path = existing_doc / "metadata.json"
+                if metadata_path.exists():
+                    try:
+                        meta = json.loads(metadata_path.read_text(encoding="utf-8"))
+                        if meta.get("file_hash") == file_hash:
+                            duplicate_path = existing_doc
+                            break
+                        if meta.get("identity_hash") == identity_hash:
+                            # C'est une mise à jour d'un document existant !
+                            replaced_document_id = meta.get("document_id")
+                            replaced_document_folder = existing_doc
+                            break
+                    except Exception:
+                        pass
+                else:
+                    # Rétrocompatibilité avec les anciens dossiers sans metadata.json
+                    original_dir = existing_doc / "original"
+                    if original_dir.exists() and original_dir.is_dir():
+                        for orig_file in original_dir.iterdir():
+                            if orig_file.is_file() and hashlib.sha256(orig_file.read_bytes()).hexdigest() == file_hash:
+                                duplicate_path = orig_file
+                                break
+            elif existing_doc.is_file():
+                if hashlib.sha256(existing_doc.read_bytes()).hexdigest() == file_hash:
+                    duplicate_path = existing_doc
+                    break
+            
+            if duplicate_path or replaced_document_id:
+                break
+                
+        if duplicate_path:
+            return ModuleResult(
+                status=ResultStatus.BLOCKED,
+                module="ingestion",
+                errors=["Document identique déjà présent (hash identique)."],
+                data={"project_id": project_id, "duplicate_of": duplicate_path.name}
+            )
+            
+        if replaced_document_folder and replaced_document_id:
+            try:
+                import logging
+                logging.getLogger(__name__).info(f"Mise à jour détectée : Suppression de l'ancienne version {replaced_document_id}")
+                shutil.rmtree(replaced_document_folder)
+            except Exception:
+                pass
+
+
         config = self.workspace.load_config(project_id)
         plan = self.brain.plan_ingestion(project_id)
         self.workspace.append_event(
@@ -69,11 +153,35 @@ class IngestionPipeline:
 
         project_path = self.workspace.path_for(project_id)
         document_id = str(uuid4())
-        copied = project_path / "documents" / f"{document_id}{source.suffix.lower()}"
+        
+        # Structure de dossier transparente (Anti-Fragile)
+        doc_folder = project_path / "documents" / f"{source.stem}_{document_id[:8]}"
+        original_dir = doc_folder / "original"
+        chunks_dir = doc_folder / "chunks"
+        enrichments_dir = doc_folder / "enrichments"
+        
+        original_dir.mkdir(parents=True, exist_ok=True)
+        chunks_dir.mkdir(parents=True, exist_ok=True)
+        enrichments_dir.mkdir(parents=True, exist_ok=True)
+        
+        import json
+        metadata_path = doc_folder / "metadata.json"
+        metadata_path.write_text(
+            json.dumps({
+                "document_id": document_id,
+                "file_hash": file_hash,
+                "identity_hash": identity_hash,
+                "source_name": source.name
+            }, indent=2),
+            encoding="utf-8"
+        )
+        
+        copied = original_dir / source.name
         shutil.copy2(source, copied)
-        artifact_dir = project_path / "artifacts" / document_id
-        artifact_dir.mkdir(parents=True, exist_ok=True)
-
+        
+        # Compatibilité avec le reste du code qui attend un artifact_dir (qu'on pointe vers enrichments)
+        artifact_dir = enrichments_dir
+        
         long_pdf: LongPDFResult | None = None
         try:
             if copied.suffix.lower() == ".pdf" and config.batching.enabled:
@@ -209,6 +317,11 @@ class IngestionPipeline:
         if config.features.kant_glove:
             analyzer = KantGloveAnalyzer()
             chunks = [analyzer.enrich(chunk) for chunk in chunks]
+            
+        if getattr(config.features, "reflection", False):
+            from control_tower.semantics.reflection import SelfReflectionAnalyzer
+            reflection_analyzer = SelfReflectionAnalyzer(llm_config=config.llm)
+            chunks = [reflection_analyzer.enrich(chunk) for chunk in chunks]
 
         consolidator = Consolidator(config=config.consolidation)
         chunks, assets, consolidation = consolidator.consolidate(chunks, assets)
@@ -241,6 +354,12 @@ class IngestionPipeline:
             ),
             encoding="utf-8",
         )
+        # Écriture des chunks individuels dans le dossier chunks/ (Anti-Fragile)
+        for i, chunk in enumerate(chunks):
+            (chunks_dir / f"chunk_{i:04d}.json").write_text(
+                chunk.model_dump_json(indent=2),
+                encoding="utf-8"
+            )
 
         store = SQLiteStore(project_path / "state" / "knowledge.db")
         store.save_chunks(chunks)
@@ -275,6 +394,7 @@ class IngestionPipeline:
             data={
                 "project_id": project_id,
                 "document_id": document_id,
+                "replaced_document_id": replaced_document_id,
                 "stored_copy": str(copied),
                 "chunk_count": len(chunks),
                 "canonical_chunk_count": consolidation.canonical_chunks,

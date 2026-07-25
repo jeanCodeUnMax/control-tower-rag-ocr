@@ -1,314 +1,77 @@
-# Control Tower RAG — Repository complet V0.5
+# 🚀 Control Tower RAG & OCR - Synthèse du Projet
 
-> Prototype avancé documenté et déployable localement. Consulter impérativement [l’audit V0.5](docs/AUDIT_V0.5.md) et les [limites/roadmap](docs/wiki/12_LIMITS_ROADMAP.md) avant une mise en production.
+> **Projet de développement d'un pipeline RAG (Retrieval-Augmented Generation) avancé, multi-modèles (Ollama, Mistral, OpenRouter) doté d'une Arène de Consensus Cognitive.**
 
-## Accès rapide
-
-- [Wiki](docs/wiki/README.md)
-- [PRD](docs/PRD.md)
-- [Dev Book](docs/DEV_BOOK.md)
-- [Dev Tracker](docs/DEV_TRACKER.md)
-- [Guide du dépôt](docs/REPOSITORY_GUIDE.md)
-- [Installation et déploiement](docs/wiki/02_INSTALL_DEPLOY.md)
-- [Comment utiliser](docs/wiki/03_USE.md)
-- [Comment régler](docs/wiki/04_CONFIGURE.md)
-- [Comment expliquer](docs/wiki/05_EXPLAIN.md)
-- Interface locale après démarrage : `http://127.0.0.1:8000/ui/`
-- Documentation API : `http://127.0.0.1:8000/docs`
+## 📖 Synthèse du Projet
+Control Tower est un système de gestion documentaire intelligent qui ne se contente pas d'ingérer bêtement des documents. Il déduplique les fichiers, atomise le texte, évalue sa cohérence à travers des paradigmes cognitifs (Maïeutique, Kant, Pseudocode) et consolide le tout dans une base de données vectorielle (Qdrant / Zvec). 
+La grande force du projet est son **Arène de Consensus** : face à une question, plusieurs LLMs débattent en parallèle, puis un modèle "Juge" (ex: Mistral) compile une réponse exécutive et strictement factuelle (anti-hallucination) à l'aide d'une température très basse (0.1) et d'un contexte vectoriel ultra-précis extrait sous vos yeux.
 
 ---
 
+## ⚙️ Comment ça fonctionne ? (Architecture)
 
-Tour de contrôle documentaire pour PDF longs. La V0.5 ajoute une alternative exploitable entre ingestion immédiate et traitement multimodal accéléré : préflight, profils, routage page par page, fallbacks, quotas, budget et enrichissement différé du même document.
+1. **Ingestion & Déduplication** : Le système calcule un hash unique (SHA-256) du document. Si le document existe déjà à l'identique, l'ingestion est bloquée pour éviter de polluer la base.
+2. **Extraction & Atomisation** : Le document est découpé en fragments (chunks) sémantiques.
+3. **Réflexion & Enrichissement** : Avant l'indexation, des LLMs enrichissent les fragments via différents "Paradigmes Cognitifs" (questionnement socratique, synthèse philosophique, etc.) pour augmenter la qualité de la donnée.
+4. **Vectorisation** : Les fragments sont plongés (embedded) et stockés dans notre base vectorielle locale (Qdrant / Zvec).
+5. **L'Arène de Consensus (QA)** : 
+   - L'utilisateur pose une question.
+   - Les vecteurs les plus pertinents sont extraits de la base.
+   - 3 à 5 LLMs tentent de répondre en parallèle.
+   - Le "Juge Final" utilise le paradigme **Executive** pour livrer la vérité froide et factuelle.
 
-## Ce que cette version fait réellement
+---
 
-- extraction PDF native, OCR Tesseract et analyse page par page ;
-- lots adaptatifs et registre exhaustif des pages ;
-- consolidation des chunks et actifs visuels avant indexation ;
-- profil `local_fast` pour rendre le texte interrogeable immédiatement ;
-- file explicite des pages visuelles différées ;
-- profils `balanced`, `cloud_turbo` et `night_deep` ;
-- providers OpenAI-compatibles : OpenRouter, Ollama local et Ollama Cloud ;
-- provider Gemini REST direct ;
-- appels vision indépendants par page et parallélisés dans chaque lot ;
-- débit maximal, concurrence, timeout et retries propres à chaque provider ;
-- backoff exponentiel avec jitter ;
-- circuit breaker après échecs répétés ;
-- cascade de providers et repli local sans perdre la page ;
-- plafond budgétaire par document ;
-- préflight sans appel API ;
-- benchmark sur un échantillon représentatif ;
-- enrichissement ultérieur des pages différées sans dupliquer le document ;
-- remplacement atomique des chunks du document après enrichissement ;
-- 30 tests automatisés.
+## 💻 Comment ça s'installe ?
 
-## Installation
-
+### 1. Backend (Python)
 ```powershell
+# Créer l'environnement virtuel et l'activer
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
+
+# Installer les dépendances
 python -m pip install --upgrade pip setuptools wheel
 python -m pip install -e ".[dev]"
 ```
 
-Puis :
-
+### 2. Frontend (React)
 ```powershell
-control-tower init-project demo
+cd frontend
+npm install
+npm run dev
 ```
 
-## Parcours A — résultat immédiat et économique
+### 3. Services tiers
+- Assurez-vous d'avoir **Ollama** lancé en local avec les modèles téléchargés (ex: `llama3`).
+- Exportez vos clés API dans votre environnement (ex: `MISTRAL_API_KEY`).
 
-Le profil par défaut est `local_fast`.
+---
 
-```powershell
-control-tower profile-set --project demo local_fast
-control-tower plan-document --project demo "C:\PDF\manuel.pdf"
-control-tower ingest --project demo "C:\PDF\manuel.pdf"
-```
+## 🎮 Comment ça s'utilise ?
 
-Le PDF est extrait, contrôlé, atomisé et consolidé. Les pages simples entrent dans le RAG immédiatement. Les pages nécessitant une compréhension visuelle profonde sont inscrites dans :
+### Via l'Interface Web (Recommandé)
+Accédez à `http://localhost:5173` (ou le port indiqué par Vite) pour utiliser l'interface graphique. Vous pourrez sélectionner vos LLMs, interroger l'Arène, voir les "Vecteurs extraits de la base" et activer la recherche Web en temps réel.
 
-```text
-artifacts/<document_id>/provider_report.json
-```
+### Via le Terminal (CLI)
+- **Initier un projet** : `.venv\Scripts\python.exe src/control_tower/cli.py init-project demo`
+- **Ingérer un document** : `.venv\Scripts\python.exe src/control_tower/cli.py ingest --project demo "chemin/vers/doc.pdf"`
+- **Lancer l'Arène (Consensus)** : `.venv\Scripts\python.exe src/control_tower/cli.py synthesize --project demo "Votre question ?" --paradigm executive`
 
-Champ principal :
+---
 
-```json
-{
-  "deferred_pages": [7, 18, 42]
-}
-```
+## 🛠 Comment ça se règle ?
 
-## Parcours B — cloud rapide
+Toute la puissance de Control Tower réside dans ses réglages :
+- **Paradigmes cognitifs** : Modifiables depuis l'UI (Executive, Socratic, Analogy, Discovery). L'Executive est forcé à une température de `0.1` pour éviter formellement les hallucinations.
+- **Routage des modèles** : Géré dans la configuration du projet (ex: `.control_tower/projects/demo/config.yaml`), vous pouvez activer/désactiver les providers (OpenRouter, Gemini, Mistral, Ollama) et définir vos priorités.
+- **Moteur Vectoriel** : Le moteur est configurable (Qdrant local ou base Zvec distante).
 
-### OpenRouter avec Qwen3-VL
+---
 
-```powershell
-$env:OPENROUTER_API_KEY="..."
-control-tower config-set --project demo vision.providers.1.enabled true
-control-tower profile-set --project demo cloud_turbo
-```
+## 🎯 Ce qu'il reste à faire (Roadmap)
 
-Le provider configuré à l'index `1` est :
-
-```text
-openrouter_qwen → qwen/qwen3-vl-32b-instruct
-```
-
-Option Flash via OpenRouter :
-
-```powershell
-control-tower config-set --project demo vision.providers.2.enabled true
-```
-
-### Gemini direct
-
-```powershell
-$env:GEMINI_API_KEY="..."
-control-tower config-set --project demo vision.providers.3.enabled true
-control-tower profile-set --project demo cloud_turbo
-```
-
-### Ollama local
-
-```powershell
-ollama pull qwen3-vl:4b
-control-tower config-set --project demo vision.providers.0.enabled true
-control-tower profile-set --project demo balanced
-```
-
-### Ollama Cloud
-
-```powershell
-$env:OLLAMA_API_KEY="..."
-control-tower config-set --project demo vision.providers.4.enabled true
-```
-
-Les identifiants de modèles cloud changent selon le catalogue du compte. Ajuste si nécessaire :
-
-```powershell
-control-tower config-set --project demo vision.providers.4.model "MODELE_CLOUD"
-```
-
-## Préflight obligatoire avant 800 pages
-
-```powershell
-control-tower plan-document --project demo "C:\PDF\manuel.pdf"
-```
-
-Le résultat contient :
-
-- nombre exact de pages ;
-- plan des lots ;
-- pages locales ;
-- pages cloud ;
-- pages différées ;
-- clés API détectées ;
-- concurrence et RPM configurés ;
-- coût cloud minimal estimé ;
-- recommandation de profil.
-
-Aucun appel cloud n'est effectué pendant le préflight.
-
-## Benchmark avant ingestion massive
-
-```powershell
-control-tower benchmark-vision `
-  --project demo `
-  --max-pages 12 `
-  "C:\PDF\manuel.pdf"
-```
-
-Le benchmark sélectionne en priorité des pages complexes, puis des pages réparties dans le document. Il retourne :
-
-- temps total ;
-- pages par minute ;
-- projection indicative pour 800 pages ;
-- provider choisi page par page ;
-- retries et erreurs ;
-- fallback éventuel ;
-- estimation budgétaire.
-
-Le rapport est enregistré dans :
-
-```text
-.control_tower/projects/<projet>/benchmarks/<benchmark_id>/benchmark.json
-```
-
-La projection 800 pages est une extrapolation du corpus échantillonné, pas une garantie contractuelle.
-
-## Enrichir la nuit sans réingérer le PDF
-
-Après une ingestion `local_fast`, récupère le `document_id`, puis :
-
-```powershell
-control-tower enrich-document `
-  --project demo `
-  --document-id <DOCUMENT_ID> `
-  --profile cloud_turbo
-```
-
-Ou pour une passe approfondie :
-
-```powershell
-control-tower enrich-document `
-  --project demo `
-  --document-id <DOCUMENT_ID> `
-  --profile night_deep
-```
-
-Cette commande :
-
-1. reprend uniquement les pages marquées `needs_multimodal_review` ;
-2. les rend en image ;
-3. exécute la cascade configurée ;
-4. met à jour `page_analyses.json` ;
-5. ajoute le texte manuscrit ou visuel découvert ;
-6. reconstruit les chunks du même `document_id` ;
-7. reconsolide les doublons ;
-8. remplace atomiquement l'ancien index du document.
-
-Elle ne crée pas une seconde copie logique du PDF dans le RAG.
-
-## Profils
-
-| Profil | Comportement |
-|---|---|
-| `local_fast` | Texte immédiatement disponible, vision complexe différée |
-| `balanced` | Cloud uniquement pour OCR difficile, images, graphes ou dessins |
-| `cloud_turbo` | Providers cloud prioritaires, local en dernier secours |
-| `night_deep` | Analyse multimodale de toutes les pages |
-
-## Réglages de résilience
-
-Exemple OpenRouter Qwen, index `1` :
-
-```powershell
-control-tower config-set --project demo vision.providers.1.max_concurrency 12
-control-tower config-set --project demo vision.providers.1.requests_per_minute 240
-control-tower config-set --project demo vision.providers.1.max_retries 4
-control-tower config-set --project demo vision.providers.1.timeout_seconds 120
-control-tower config-set --project demo vision.providers.1.circuit_breaker_failures 5
-control-tower config-set --project demo vision.providers.1.circuit_breaker_cooldown_seconds 60
-```
-
-Budget :
-
-```powershell
-control-tower config-set --project demo vision.max_cost_per_document_usd 15
-control-tower config-set --project demo vision.stop_on_budget_exceeded false
-```
-
-Avec `stop_on_budget_exceeded=false`, les pages restantes repassent en local et restent signalées pour révision. Avec `true`, le traitement s'arrête explicitement au lieu de dépasser le budget.
-
-## Cascade par défaut
-
-```text
-cloud_turbo / night_deep
-  OpenRouter Qwen
-  → OpenRouter Gemini Flash
-  → Gemini direct
-  → Ollama Cloud
-  → Ollama local
-  → analyse locale dégradée
-```
-
-Seuls les providers dont `enabled=true` participent à la cascade. Aucune clé n'est requise pour utiliser `local_fast`.
-
-## Contrats HTTP implémentés
-
-- OpenRouter/Ollama : API Chat Completions OpenAI-compatible, image en base64 et sortie JSON ;
-- OpenRouter : objet `provider` pour le tri par débit, fallbacks et refus de collecte ;
-- Gemini : `generateContent`, image inline et schéma JSON ;
-- chaque réponse est validée par le modèle Pydantic `PageAnalysis` ;
-- une réponse sans le numéro de page attendu est rejetée.
-
-## Artefacts supplémentaires V0.5
-
-```text
-artifacts/<document_id>/
-├── provider_report.json
-├── renders_enrichment/
-└── pages/page_XXXXX.json
-
-benchmarks/<benchmark_id>/
-└── benchmark.json
-```
-
-## Tests
-
-```powershell
-pytest -q
-```
-
-Les tests couvrent notamment :
-
-- routage local/cloud/différé ;
-- cascade après erreur `429` ;
-- retries avant succès ;
-- budget insuffisant ;
-- contrats OpenRouter/Ollama et Gemini ;
-- préflight ;
-- benchmark local ;
-- enrichissement différé ;
-- remplacement sans duplication du document ;
-- tests OCR, PDF long et consolidation des versions précédentes.
-
-## Limites honnêtes
-
-- aucun appel réel OpenRouter ou Gemini n'est exécuté sans tes clés ;
-- les prix par page dans le YAML sont des estimations configurables, pas une facture calculée par tokens ;
-- le parallélisme inter-lots reste séquentiel : la vision est parallélisée à l'intérieur de chaque lot adaptatif ;
-- le benchmark doit être exécuté sur tes PDF pour régler la concurrence et les RPM ;
-- Mistral OCR Batch et PaddleOCR ne sont pas encore branchés comme providers natifs ;
-- la recherche finale reste lexicale ;
-- le consensus-less n'est pas encore dans la décision d'indexation.
-
-Voir :
-
-- `docs/PROVIDER_ROUTING_V0.5.md`
-- `docs/TASK_BREAKDOWN_V0.5.md`
-- `CHANGES_V0.5.md`
+1. [ ] **Mise à jour Intelligente des Documents** : Implémenter un scan des "2 premières pages" pour détecter les nouvelles versions d'un même document, afin d'*écraser* dynamiquement l'ancienne version vectorisée (au lieu de simplement bloquer par hash).
+2. [ ] **Nettoyage de la Base Vectorielle** : Créer une commande de maintenance (Garbage Collector) pour purger les vieux documents "fantômes" de Qdrant et synchroniser proprement le RAG avec les fichiers réels.
+3. [ ] **Quality Scoring des Ingestions** : Assigner une "note de cohérence" lors de l'ingestion par un modèle Juge. Si la note est trop faible, le système relance l'extraction avec de meilleurs conseils avant de passer à l'embedding.
+4. [ ] **Hybridation de la Recherche** : Combiner la recherche purement sémantique (vecteurs) avec la recherche full-text classique (BM25) pour une précision infaillible.

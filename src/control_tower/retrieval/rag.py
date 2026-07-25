@@ -25,7 +25,7 @@ class RAGEngine:
         self.llm = llm
         self.collection_name = collection_name
 
-    def ask(self, question: str, top_k: int = 5) -> dict[str, Any]:
+    def ask(self, question: str, top_k: int = 5, paradigm: str = "executive") -> dict[str, Any]:
         """Pose une question au système et retourne la réponse augmentée par les documents."""
         # 1. Vectoriser la question
         query_vector = self.embedder.embed_text(question)
@@ -58,18 +58,16 @@ class RAGEngine:
 
         context_text = "\n".join(context_parts)
 
-        # 4. Construire le Prompt
-        system_prompt = (
-            "Tu es 'Control Tower', un assistant IA expert en analyse documentaire. "
-            "Ton rôle est de répondre aux questions de l'utilisateur de manière précise, "
-            "en te basant EXCLUSIVEMENT sur les documents fournis dans le contexte ci-dessous.\n\n"
-            "RÈGLES IMPORTANTES :\n"
-            "- Si la réponse ne se trouve pas dans le contexte, dis-le clairement. N'invente rien.\n"
-            "- Cite toujours tes sources à la fin ou dans le corps de ta réponse (ex: 'D'après le document X...').\n"
-            "- Sois concis et structuré (utilise des listes à puces si nécessaire)."
-        )
+        # 4. Construire le Prompt selon le paradigme
+        from control_tower.generation.paradigms import COGNITIVE_PARADIGMS
+        if paradigm not in COGNITIVE_PARADIGMS:
+            import logging
+            logging.getLogger(__name__).warning(f"Paradigme '{paradigm}' inconnu. Utilisation de 'executive' par défaut.")
+            paradigm = "executive"
+            
+        system_prompt = COGNITIVE_PARADIGMS[paradigm]
 
-        user_prompt = f"CONTEXTE RÉCUPÉRÉ DES DOCUMENTS :\n{context_text}\n\nQUESTION DE L'UTILISATEUR :\n{question}"
+        user_prompt = f"CONTEXTE RÉCUPÉRÉ DES DOCUMENTS :\n{context_text}\n\nQUESTION DE L'UTILISATEUR :\n{question}\n\nRéponds en appliquant strictement ton paradigme."
 
         # 5. Appeler le LLM
         try:

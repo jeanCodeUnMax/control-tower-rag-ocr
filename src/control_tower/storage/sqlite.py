@@ -112,6 +112,42 @@ class SQLiteStore:
             rows = conn.execute("SELECT payload FROM chunks ORDER BY document_id, ordinal").fetchall()
         return [AtomicChunk.model_validate_json(row["payload"]) for row in rows]
 
+    def replace_all_chunks(self, chunks: list[AtomicChunk]) -> None:
+        """Remplace atomiquement tous les chunks de la base (utile pour la consolidation globale)."""
+        by_doc: dict[str, list[AtomicChunk]] = {}
+        for chunk in chunks:
+            if chunk.document_id not in by_doc:
+                by_doc[chunk.document_id] = []
+            by_doc[chunk.document_id].append(chunk)
+        
+        with self._connect() as conn:
+            # Nettoyer l'existant
+            conn.execute("DELETE FROM dependencies")
+            conn.execute("DELETE FROM node_state")
+            conn.execute("DELETE FROM chunks")
+            # Réinsérer tous les chunks
+            conn.executemany(
+                """
+                INSERT INTO chunks(id, document_id, ordinal, text, content_hash, payload)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                [
+                    (
+                        c.id,
+                        c.document_id,
+                        c.ordinal,
+                        c.text,
+                        c.content_hash,
+                        c.model_dump_json(),
+                    )
+                    for c in chunks
+                ],
+            )
+            conn.executemany(
+                "INSERT INTO node_state(node_id, version, status) VALUES (?, 1, 'fresh')",
+                [(c.id,) for c in chunks],
+            )
+
     def chunks_for_document(self, document_id: str) -> list[AtomicChunk]:
         with self._connect() as conn:
             rows = conn.execute(
