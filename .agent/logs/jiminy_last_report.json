@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-25T05:27:00.762698",
+  "timestamp": "2026-07-26T05:23:19.116716",
   "overall_ok": true,
   "checks": {
     "rag_bridge": {
@@ -14,7 +14,7 @@
           "service": "zvec-rest-bridge"
         }
       },
-      "pid": 31188,
+      "pid": 29452,
       "pid_alive": true,
       "ok": true
     },

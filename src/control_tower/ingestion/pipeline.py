@@ -33,7 +33,7 @@ class IngestionPipeline:
         self.extractor = extractor or DocumentExtractor()
         self.brain = Brain()
 
-    def ingest(self, project_id: str, source: Path, allow_review: bool = False) -> ModuleResult:
+    def ingest(self, project_id: str, source: Path, allow_review: bool = False, force: bool = False) -> ModuleResult:
         import hashlib
         import json
         import shutil
@@ -76,7 +76,11 @@ class IngestionPipeline:
                     try:
                         meta = json.loads(metadata_path.read_text(encoding="utf-8"))
                         if meta.get("file_hash") == file_hash:
-                            duplicate_path = existing_doc
+                            if force:
+                                replaced_document_id = meta.get("document_id")
+                                replaced_document_folder = existing_doc
+                            else:
+                                duplicate_path = existing_doc
                             break
                         if meta.get("identity_hash") == identity_hash:
                             # C'est une mise à jour d'un document existant !
@@ -101,7 +105,7 @@ class IngestionPipeline:
             if duplicate_path or replaced_document_id:
                 break
                 
-        if duplicate_path:
+        if duplicate_path and not force:
             return ModuleResult(
                 status=ResultStatus.BLOCKED,
                 module="ingestion",
@@ -112,7 +116,7 @@ class IngestionPipeline:
         if replaced_document_folder and replaced_document_id:
             try:
                 import logging
-                logging.getLogger(__name__).info(f"Mise à jour détectée : Suppression de l'ancienne version {replaced_document_id}")
+                logging.getLogger(__name__).info(f"Mise à jour/Écrasement détecté : Suppression de l'ancienne version {replaced_document_id}")
                 shutil.rmtree(replaced_document_folder)
             except Exception:
                 pass
@@ -315,13 +319,18 @@ class IngestionPipeline:
             analyzer = MaieuticAnalyzer()
             chunks = [analyzer.enrich(chunk) for chunk in chunks]
         if config.features.kant_glove:
-            analyzer = KantGloveAnalyzer()
-            chunks = [analyzer.enrich(chunk) for chunk in chunks]
+            kant = KantGloveAnalyzer()
+            chunks = [kant.enrich(chunk) for chunk in chunks]
             
         if getattr(config.features, "reflection", False):
             from control_tower.semantics.reflection import SelfReflectionAnalyzer
             reflection_analyzer = SelfReflectionAnalyzer(llm_config=config.llm)
             chunks = [reflection_analyzer.enrich(chunk) for chunk in chunks]
+            
+        if getattr(config.features, "web_search", False):
+            from control_tower.semantics.web_search import WebAnalyzer
+            web_analyzer = WebAnalyzer()
+            chunks = [web_analyzer.enrich(chunk) for chunk in chunks]
 
         consolidator = Consolidator(config=config.consolidation)
         chunks, assets, consolidation = consolidator.consolidate(chunks, assets)

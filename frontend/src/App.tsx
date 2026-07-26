@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Activity, Database, Swords, Server, Shield, BrainCircuit, Loader2, FileText, Layers } from 'lucide-react'
+import { Activity, Database, Swords, Server, Shield, BrainCircuit, Loader2, FileText, Layers, Cpu, Settings, Edit, Save, X, Check, XCircle, Timer } from 'lucide-react'
+import { ProvidersDashboard } from './ProvidersDashboard'
+import { BenchmarkDashboard } from './BenchmarkDashboard'
 
 function App() {
   const [activeTab, setActiveTab] = useState('arena')
@@ -91,6 +93,33 @@ function App() {
             <Swords className="h-5 w-5" />
             <span className="font-medium">3. L'Arène (Synthèse)</span>
           </button>
+
+          <button 
+            onClick={() => setActiveTab('quarantine')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+            activeTab === 'quarantine' ? 'bg-orange-900/30 text-orange-400 border border-orange-500/30' : 'hover:bg-gray-800 text-gray-400'
+          }`}>
+            <Shield className="h-5 w-5" />
+            <span className="font-medium">4. Tour de Contrôle</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('providers')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+            activeTab === 'providers' ? 'bg-emerald-900/30 text-emerald-400 border border-emerald-500/30' : 'hover:bg-gray-800 text-gray-400'
+          }`}>
+            <Cpu className="h-5 w-5" />
+            <span className="font-medium">5. Les Providers</span>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('benchmark')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
+            activeTab === 'benchmark' ? 'bg-amber-900/30 text-amber-400 border border-amber-500/30' : 'hover:bg-gray-800 text-gray-400'
+          }`}>
+            <Timer className="h-5 w-5" />
+            <span className="font-medium">6. Le Benchmarker</span>
+          </button>
         </nav>
 
         {/* Dynamic Area */}
@@ -98,8 +127,7 @@ function App() {
           {/* Ambient Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-          {activeTab === 'arena' && (
-            <div className="flex flex-col h-full relative z-10">
+          <div className={activeTab === 'arena' ? 'flex flex-col h-full relative z-10' : 'hidden'}>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-white flex items-center">
                   <Swords className="h-6 w-6 mr-3 text-fuchsia-400" />
@@ -250,15 +278,25 @@ function App() {
                 </button>
               </div>
             </div>
-          )}
 
-          {activeTab === 'ingestion' && (
+          <div className={activeTab === 'ingestion' ? 'h-full' : 'hidden'}>
             <IngestionDashboard />
-          )}
+          </div>
           
-          {activeTab === 'observatory' && (
-            <VectorObservatory />
-          )}
+          <div className={activeTab === 'observatory' ? 'h-full' : 'hidden'}>
+            <VectorObservatory isActive={activeTab === 'observatory'} />
+          </div>
+
+          <div className={activeTab === 'quarantine' ? 'h-full' : 'hidden'}>
+            <QuarantineDashboard isActive={activeTab === 'quarantine'} />
+          </div>
+
+          <div className={activeTab === 'providers' ? 'h-full' : 'hidden'}>
+            <ProvidersDashboard isActive={activeTab === 'providers'} />
+          </div>
+          <div className={activeTab === 'benchmark' ? 'h-full' : 'hidden'}>
+            <BenchmarkDashboard isActive={activeTab === 'benchmark'} />
+          </div>
 
         </div>
       </main>
@@ -266,7 +304,7 @@ function App() {
   )
 }
 
-function VectorObservatory() {
+function VectorObservatory({ isActive }: { isActive?: boolean }) {
   const [projectId, setProjectId] = useState('demo')
   const [stats, setStats] = useState<any>(null)
   const [documents, setDocuments] = useState<string[]>([])
@@ -331,8 +369,10 @@ function VectorObservatory() {
   }
 
   useEffect(() => {
-    fetchProjectData()
-  }, [projectId])
+    if (isActive !== false) {
+      fetchProjectData()
+    }
+  }, [projectId, isActive])
 
   const openDocumentFolder = async (docId: string) => {
     try {
@@ -514,6 +554,22 @@ function IngestionDashboard() {
       if (!response.ok) {
         setIngestResult({ error: data.detail || 'Erreur serveur' })
       } else {
+        if (data.status === 'blocked' && data.errors && data.errors[0]?.includes('identique')) {
+            if (window.confirm("Ce document existe déjà. Voulez-vous l'écraser ? (L'ancienne version sera supprimée)")) {
+                formData.append('force', 'true');
+                const forceResponse = await fetch(`http://localhost:8000/projects/${projectId}/ingest`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const forceData = await forceResponse.json();
+                if (!forceResponse.ok) {
+                    setIngestResult({ error: forceData.detail || 'Erreur serveur' });
+                } else {
+                    setIngestResult(forceData);
+                }
+                return;
+            }
+        }
         setIngestResult(data)
       }
     } catch (err) {
@@ -545,7 +601,9 @@ function IngestionDashboard() {
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
               className="w-full bg-[#111827] border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-1 focus:ring-cyan-500 outline-none text-sm"
+              id="projectIdInput"
             />
+            <p className="text-xs text-gray-500 italic">Définit le workspace isolé (dossier, collection Qdrant, base Graph). Chaque projet a sa propre base de connaissances vectorielle, SQL et Graph.</p>
           </div>
 
           <div className="space-y-4 pt-2">
@@ -656,6 +714,170 @@ function IngestionDashboard() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function QuarantineDashboard({ isActive }: { isActive?: boolean }) {
+  const [projectId, setProjectId] = useState('demo')
+  const [chunks, setChunks] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [vectorizing, setVectorizing] = useState(false)
+  const [editedTexts, setEditedTexts] = useState<Record<string, string>>({})
+
+  const fetchQuarantine = async () => {
+    if (!projectId) return
+    setLoading(true)
+    try {
+      const res = await fetch(`http://localhost:8000/projects/${projectId}/quarantine`)
+      if (res.ok) {
+        const data = await res.json()
+        setChunks(data.quarantined_chunks || [])
+        // Initialize editable texts
+        const initialEdits: Record<string, string> = {}
+        ;(data.quarantined_chunks || []).forEach((c: any) => {
+          initialEdits[c.id] = c.text
+        })
+        setEditedTexts(initialEdits)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isActive !== false) {
+      fetchQuarantine()
+    }
+  }, [projectId, isActive])
+
+  const handleValidate = async (chunkId: string) => {
+    try {
+      const res = await fetch(`http://localhost:8000/projects/${projectId}/quarantine/${chunkId}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_text: editedTexts[chunkId] })
+      })
+      if (res.ok) {
+        setChunks(chunks.filter(c => c.id !== chunkId))
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleDiscard = async (chunkId: string) => {
+    try {
+      const res = await fetch(`http://localhost:8000/projects/${projectId}/quarantine/${chunkId}/discard`, {
+        method: 'POST'
+      })
+      if (res.ok) {
+        setChunks(chunks.filter(c => c.id !== chunkId))
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleVectorize = async () => {
+    if (!projectId || vectorizing) return
+    setVectorizing(true)
+    try {
+      await fetch(`http://localhost:8000/projects/${projectId}/vectorize`, {
+        method: 'POST'
+      })
+      alert("Vectorisation lancée. (Consultez les logs du backend)")
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setVectorizing(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full relative z-10 p-6 overflow-y-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center">
+          <Shield className="h-6 w-6 mr-3 text-orange-400" />
+          Tour de Contrôle (Quarantaine)
+        </h2>
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-400">Projet:</label>
+          <input 
+            type="text" 
+            value={projectId}
+            onChange={(e) => setProjectId(e.target.value)}
+            className="bg-[#0b0f19] border border-gray-700 rounded-lg px-3 py-1 text-white text-sm focus:ring-1 focus:ring-orange-500 outline-none"
+          />
+          <button onClick={fetchQuarantine} className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-md text-gray-300">
+            <Activity className="h-4 w-4" />
+          </button>
+          <button 
+            onClick={handleVectorize} 
+            disabled={vectorizing}
+            className="ml-4 px-3 py-1.5 bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/30 rounded-md text-sm font-medium transition-colors flex items-center"
+          >
+            {vectorizing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4 mr-2" />
+            )}
+            Vectoriser les Validés
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+           <Loader2 className="h-10 w-10 text-orange-500 animate-spin" />
+        </div>
+      ) : chunks.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+          <Shield className="h-12 w-12 mb-4 opacity-20 text-orange-500" />
+          <p>Aucun chunk en quarantaine pour ce projet.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {chunks.map(chunk => (
+            <div key={chunk.id} className="bg-[#111827] border border-red-900/30 rounded-xl overflow-hidden flex flex-col">
+              <div className="bg-red-900/20 p-3 border-b border-red-900/30 flex justify-between items-center">
+                <span className="text-xs font-mono text-gray-400">Doc: {chunk.document_id.substring(0,8)}... | Chunk: {chunk.id.substring(0,6)}...</span>
+                <span className="bg-red-900/50 text-red-300 text-xs px-2 py-0.5 rounded border border-red-800/50">Rejeté</span>
+              </div>
+              <div className="p-4 flex-1 space-y-4">
+                <div>
+                   <h4 className="text-xs font-bold text-orange-400 mb-1 uppercase tracking-wider">Motif du Juge :</h4>
+                   <p className="text-sm text-gray-300 italic border-l-2 border-orange-500/50 pl-2 py-1 bg-black/20">{chunk.judge_feedback}</p>
+                </div>
+                <div className="flex-1 flex flex-col">
+                   <h4 className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Texte Éditable :</h4>
+                   <textarea
+                     className="w-full flex-1 min-h-[150px] bg-[#0b0f19] border border-gray-700 rounded-md p-3 text-sm font-mono text-gray-300 focus:ring-1 focus:ring-orange-500 outline-none"
+                     value={editedTexts[chunk.id] || ''}
+                     onChange={(e) => setEditedTexts({...editedTexts, [chunk.id]: e.target.value})}
+                   />
+                </div>
+              </div>
+              <div className="p-3 bg-gray-900/50 border-t border-gray-800 flex justify-between">
+                <button 
+                  onClick={() => handleDiscard(chunk.id)}
+                  className="px-4 py-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-500/30 rounded text-sm transition-colors"
+                >
+                  Jeter définitivement
+                </button>
+                <button 
+                  onClick={() => handleValidate(chunk.id)}
+                  className="px-4 py-2 bg-emerald-900/30 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-500/30 rounded text-sm font-bold transition-colors"
+                >
+                  Forcer la validation
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

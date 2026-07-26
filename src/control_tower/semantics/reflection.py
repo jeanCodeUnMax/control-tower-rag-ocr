@@ -14,23 +14,11 @@ class SelfReflectionAnalyzer:
     def __init__(self, llm_config: LLMConfig):
         self.llm_config = llm_config
         
-        # L'utilisateur a demandé explicitement d'utiliser l'API Mistral pour le Juge
-        mistral_prov = next((p for p in llm_config.providers if p.kind == "mistral"), None)
-        
-        provider_type = "mistral"
-        model_name = "mistral-large-latest"
-        api_key_env = "MISTRAL_API_KEY"
-        
-        if mistral_prov:
-            provider_type = mistral_prov.kind
-            model_name = mistral_prov.model
-            api_key_env = mistral_prov.api_key_env
-            
+        # On utilise le routeur par défaut pour bénéficier du fallback (OpenRouter/Gemini) 
+        # si Mistral tombe en erreur 429 de Rate Limit strict.
         self.llm = get_llm_provider(
-            provider_type=provider_type,
+            provider_type="router",
             config_obj=llm_config,
-            model_name=model_name,
-            api_key_env=api_key_env,
             temperature=0.1  # Basse température pour le jugement
         )
 
@@ -86,7 +74,7 @@ class SelfReflectionAnalyzer:
             else:
                 json_str = response.strip()
                 
-            data = json.loads(json_str)
+            data = json.loads(json_str, strict=False)
             return int(data.get("score", 5)), data.get("feedback", "")
         except Exception as e:
             logger.warning(f"Erreur lors de la réflexion: {e}")
@@ -116,7 +104,7 @@ class SelfReflectionAnalyzer:
             else:
                 json_str = response.strip()
                 
-            data = json.loads(json_str)
+            data = json.loads(json_str, strict=False)
             new_text = data.get("text", chunk.text)
             new_questions = data.get("questions", chunk.questions)
             

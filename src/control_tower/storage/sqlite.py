@@ -112,6 +112,13 @@ class SQLiteStore:
             rows = conn.execute("SELECT payload FROM chunks ORDER BY document_id, ordinal").fetchall()
         return [AtomicChunk.model_validate_json(row["payload"]) for row in rows]
 
+    def get_chunk(self, chunk_id: str) -> AtomicChunk | None:
+        with self._connect() as conn:
+            row = conn.execute("SELECT payload FROM chunks WHERE id=?", (chunk_id,)).fetchone()
+        if row:
+            return AtomicChunk.model_validate_json(row["payload"])
+        return None
+
     def replace_all_chunks(self, chunks: list[AtomicChunk]) -> None:
         """Remplace atomiquement tous les chunks de la base (utile pour la consolidation globale)."""
         by_doc: dict[str, list[AtomicChunk]] = {}

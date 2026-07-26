@@ -80,8 +80,13 @@ class AtomicChunk(BaseModel):
     canonical_id: str | None = None
     duplicate_score: float | None = None
     indexable: bool = True
+    validation_status: str = "pending"
+    epistemic_state: str = "extracted"
+    judge_feedback: str | None = None
+    web_enrichments: list[str] = Field(default_factory=list)
+    web_sources: list[str] = Field(default_factory=list)
     evidence_occurrences: list[EvidenceOccurrence] = Field(default_factory=list)
-    schema_version: str = "1.2"
+    schema_version: str = "1.3"
 
 
 class SearchHit(BaseModel):

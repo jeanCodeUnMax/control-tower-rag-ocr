@@ -40,9 +40,9 @@ class ControlTowerService:
             "config": self.workspace.load_config(project_id).model_dump(mode="json"),
         }
 
-    def ingest(self, project_id: str, source: Path, allow_review: bool = False) -> dict:
+    def ingest(self, project_id: str, source: Path, allow_review: bool = False, force: bool = False) -> dict:
         self.workspace.require(project_id)
-        result = self.ingestion.ingest(project_id, source, allow_review=allow_review).model_dump(mode="json")
+        result = self.ingestion.ingest(project_id, source, allow_review=allow_review, force=force).model_dump(mode="json")
         
         # Si une ancienne version a été écrasée, on purge ses vecteurs
         replaced_document_id = result.get("data", {}).get("replaced_document_id")
@@ -67,6 +67,34 @@ class ControlTowerService:
             import logging
             logger = logging.getLogger(__name__)
             
+            # 0. Validation par le Juge (Epistemic Validator) - Sortie de Quarantaine
+            try:
+                logger.info("Passage des documents par le Juge (Epistemic Validator)...")
+                from control_tower.semantics.validator import EpistemicValidator
+                
+                store = SQLiteStore(self.workspace.path_for(project_id) / "state" / "knowledge.db")
+                document_id = result.get("data", {}).get("document_id")
+                
+                if document_id:
+                    chunks = store.chunks_for_document(document_id)
+                    config = self.workspace.load_config(project_id)
+                    validator = EpistemicValidator(llm_config=config.llm)
+                    evaluated_chunks = validator.evaluate_project_chunks(chunks)
+                    
+                    store.replace_document_chunks(document_id, evaluated_chunks)
+                    
+                    validated_count = sum(1 for c in evaluated_chunks if c.validation_status == "validated")
+                    rejected_count = len(evaluated_chunks) - validated_count
+                    logger.info(f"Verdict du Juge : {validated_count} validés, {rejected_count} rejetés.")
+                    result["validation"] = {
+                        "status": "completed",
+                        "validated_chunks": validated_count,
+                        "rejected_chunks": rejected_count
+                    }
+            except Exception as e:
+                logger.error(f"Erreur lors de la validation par le Juge : {e}")
+                result["validation"] = {"status": "error", "message": str(e)}
+                
             # 1. Vectorisation automatique (Qdrant Local par défaut dans ce mode)
             try:
                 logger.info("Démarrage de la vectorisation automatique...")
@@ -174,6 +202,50 @@ class ControlTowerService:
             ),
         }
 
+    def get_quarantined_chunks(self, project_id: str) -> dict:
+        self.workspace.require(project_id)
+        store = SQLiteStore(self.workspace.path_for(project_id) / "state" / "knowledge.db")
+        quarantined = [c for c in store.all_chunks() if c.validation_status == "rejected"]
+        return {
+            "project_id": project_id,
+            "quarantined_chunks": [c.model_dump(mode="json") for c in quarantined]
+        }
+
+    def validate_chunk(self, project_id: str, chunk_id: str, new_text: str | None = None) -> dict:
+        self.workspace.require(project_id)
+        store = SQLiteStore(self.workspace.path_for(project_id) / "state" / "knowledge.db")
+        chunk = store.get_chunk(chunk_id)
+        if not chunk:
+            raise ValueError(f"Chunk {chunk_id} non trouvé")
+        if new_text is not None:
+            chunk.text = new_text
+        chunk.validation_status = "validated"
+        chunk.judge_feedback = "Validé manuellement (override)"
+        store.save_chunks([chunk])
+        return {
+            "project_id": project_id,
+            "chunk_id": chunk_id,
+            "status": "validated",
+            "message": "Chunk validé manuellement"
+        }
+
+    def discard_chunk(self, project_id: str, chunk_id: str) -> dict:
+        self.workspace.require(project_id)
+        store = SQLiteStore(self.workspace.path_for(project_id) / "state" / "knowledge.db")
+        chunk = store.get_chunk(chunk_id)
+        if not chunk:
+            raise ValueError(f"Chunk {chunk_id} non trouvé")
+        chunk.validation_status = "discarded"
+        chunk.judge_feedback = "Rejeté définitivement (manuel)"
+        chunk.indexable = False
+        store.save_chunks([chunk])
+        return {
+            "project_id": project_id,
+            "chunk_id": chunk_id,
+            "status": "discarded",
+            "message": "Chunk rejeté définitivement"
+        }
+
     def show_config(self, project_id: str) -> dict:
         return {
             "project_id": project_id,
@@ -190,6 +262,66 @@ class ControlTowerService:
             "config": config.model_dump(mode="json"),
         }
 
+    def get_providers(self, project_id: str) -> dict:
+        self.workspace.require(project_id)
+        config = self.workspace.load_config(project_id)
+        return {
+            "project_id": project_id,
+            "providers": [p.model_dump(mode="json") for p in config.llm.providers]
+        }
+
+    def update_provider(self, project_id: str, provider_name: str, payload: dict) -> dict:
+        from control_tower.config import write_project_config
+        self.workspace.require(project_id)
+        config = self.workspace.load_config(project_id)
+        
+        provider = next((p for p in config.llm.providers if p.name == provider_name), None)
+        if not provider:
+            raise ValueError(f"Provider {provider_name} non trouvé dans la configuration.")
+            
+        for key, value in payload.items():
+            if hasattr(provider, key):
+                setattr(provider, key, value)
+        
+        write_project_config(self.workspace.config_path(project_id), config)
+        return {"project_id": project_id, "provider": provider.model_dump(mode="json")}
+
+    def test_provider_connection(self, project_id: str, provider_name: str) -> dict:
+        from control_tower.generation.llm import OpenRouterLLM, OllamaLLM, MistralLLM, GeminiLLM
+        self.workspace.require(project_id)
+        config = self.workspace.load_config(project_id)
+        
+        provider = next((p for p in config.llm.providers if p.name == provider_name), None)
+        if not provider:
+            raise ValueError(f"Provider {provider_name} non trouvé dans la configuration.")
+            
+        try:
+            client = None
+            if provider.kind == "openrouter" or provider.kind == "openai_compatible":
+                client = OpenRouterLLM(provider.model, provider.api_key_env, provider.temperature)
+            elif provider.kind == "ollama":
+                # Fallback to defaults if missing in the model config (though it shouldn't be for ollama)
+                base_url = provider.base_url or "http://localhost:11434/v1"
+                client = OllamaLLM(provider.model, base_url, provider.temperature)
+            elif provider.kind == "mistral":
+                client = MistralLLM(provider.model, provider.api_key_env, provider.temperature)
+            elif provider.kind == "gemini":
+                client = GeminiLLM(provider.model, provider.api_key_env, provider.temperature)
+            elif provider.kind == "huggingface":
+                from control_tower.generation.llm import HuggingFaceLLM
+                client = HuggingFaceLLM(provider.model, provider.api_key_env, provider.temperature)
+            elif provider.kind == "llamacpp":
+                from control_tower.generation.llm import LlamaCppLLM
+                client = LlamaCppLLM(provider.model, provider.temperature)
+            else:
+                raise ValueError(f"Type de provider '{provider.kind}' non supporté pour le test.")
+                
+            result = client.generate("Réponds uniquement par le mot 'OK', sans ponctuation.")
+            return {"status": "success", "message": "Connexion réussie", "response": result.strip()}
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return {"status": "error", "message": str(e)}
 
     def plan_document(self, project_id: str, source: Path) -> dict:
         """Préflight sans appel cloud: pages, lots, routes et coût minimal estimé."""
@@ -643,11 +775,14 @@ class ControlTowerService:
         # Récupérer tous les chunks du SQLite
         chunks = store.all_chunks()
         
-        if not chunks:
-            return {"status": "no_chunks_found"}
+        # Filtre de Quarantaine : Ne vectoriser QUE les chunks validés
+        validated_chunks = [chunk for chunk in chunks if chunk.validation_status == "validated"]
+        
+        if not validated_chunks:
+            return {"status": "no_validated_chunks_found"}
             
         # Pour faire simple dans la V1 : on re-vectorise tout
-        texts_to_embed = [chunk.text for chunk in chunks]
+        texts_to_embed = [chunk.text for chunk in validated_chunks]
         
         # TODO: Batching selon les limites de l'API/Provider
         vectors = embedder.embed_batch(texts_to_embed)
@@ -656,7 +791,7 @@ class ControlTowerService:
         vector_store.init_collection(config.vector_store.collection_name, embedder.dimension)
         
         upserted_count = 0
-        for chunk, vector in zip(chunks, vectors):
+        for chunk, vector in zip(validated_chunks, vectors):
             payload = chunk.model_dump(mode="json")
             vector_store.upsert(
                 collection_name=config.vector_store.collection_name,

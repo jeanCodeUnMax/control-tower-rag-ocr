@@ -216,6 +216,7 @@ class FeatureConfig(BaseModel):
     maieutic: bool = True
     kant_glove: bool = True
     reflection: bool = True
+    web_search: bool = True
     consensusless: bool = False
     background_consolidation: bool = False
 
@@ -233,9 +234,14 @@ class PolicyConfig(BaseModel):
     )
 
 
+class MCPAccessRule(BaseModel):
+    server_name: str
+    access_level: Literal["authorized", "limited", "disabled"] = "authorized"
+    rules: str = ""
+
 class LLMProviderConfig(BaseModel):
     name: str
-    kind: str = Field(pattern="^(openrouter|gemini|ollama|mistral)$")
+    kind: str = Field(pattern="^(openrouter|gemini|ollama|mistral|huggingface|llamacpp)$")
     enabled: bool = True
     model: str
     base_url: str | None = None
@@ -243,6 +249,27 @@ class LLMProviderConfig(BaseModel):
     temperature: float = 0.3
     max_retries: int = 2
     timeout_seconds: int = 60
+    role: str = "general"
+    responsibilities: str = ""
+    rules: str = ""
+    mcp_enabled: bool = False
+    mcp_servers: list[MCPAccessRule] = Field(default_factory=list)
+    circuit_breaker_failures: int = Field(default=3, ge=1, le=100)
+    circuit_breaker_cooldown_seconds: int = Field(default=120, ge=1, le=3600)
+    
+    @model_validator(mode='before')
+    @classmethod
+    def migrate_mcp_servers(cls, data: dict) -> dict:
+        if "mcp_servers" in data and isinstance(data["mcp_servers"], list):
+            new_servers = []
+            for s in data["mcp_servers"]:
+                if isinstance(s, str):
+                    new_servers.append({"server_name": s, "access_level": "authorized", "rules": ""})
+                else:
+                    new_servers.append(s)
+            data["mcp_servers"] = new_servers
+        return data
+    priority: int = 10
 
 
 class LLMConfig(BaseModel):
@@ -298,6 +325,13 @@ class LLMConfig(BaseModel):
                 enabled=True,
                 model="mistral-large-latest",
                 api_key_env="MISTRAL_API_KEY",
+            ),
+            LLMProviderConfig(
+                name="huggingface_api",
+                kind="huggingface",
+                enabled=False,
+                model="Qwen/Qwen2.5-72B-Instruct",
+                api_key_env="HF_TOKEN",
             ),
         ]
     )

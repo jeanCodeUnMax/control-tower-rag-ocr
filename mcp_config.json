@@ -1,0 +1,133 @@
+{
+    "mcpServers": {
+        "filesystem": {
+            "_comment": "Filesystem access - Adapt paths to your environment",
+            "args": [
+                "D:/mcp/filesystem/dist/index.js",
+                "D:/DATA-WEBMAN/",
+                "D:/DATA-WEBMAN/projet-DEV/",
+                "C:/Users/webma/.gemini/"
+            ],
+            "command": "node",
+            "disabled": false,
+            "env": {
+                "DISABLE_DEBUG": "true",
+                "LOG_LEVEL": "error",
+                "MCP_FS_PATH5": "D:/mcp/filesystem",
+                "MCP_GATEWAY_PATH": "D:/mcp/",
+                "STATIC_DIR_1": "D:/DATA-WEBMAN/",
+                "STATIC_DIR_2": "D:/DATA-WEBMAN/projet-DEV/",
+                "NO_COLOR": "1",
+                "FORCE_COLOR": "0"
+            }
+        },
+        "memory": {
+            "_comment": "Memory MCP - Knowledge Graph for persistent memory",
+            "args": [
+                "D:/mcp/memory/dist/index.js"
+            ],
+            "command": "node",
+            "disabled": false,
+            "env": {
+                "CASCADE_DB_ROOT": "D:/mcp/data/",
+                "DISABLE_DEBUG": "true",
+                "LOG_LEVEL": "error",
+                "MEMORY_FILE_PATH": "D:/mcp/data/current_workspace/graph/memory_mcp.db",
+                "NO_COLOR": "1",
+                "FORCE_COLOR": "0"
+            }
+        },
+        "postgres": {
+            "_comment": "PostgreSQL - Adapt connection credentials",
+            "_warning": "NEVER COMMIT REAL PASSWORDS",
+            "args": [
+                "D:/mcp/postgres-mcp/dist/index.js"
+            ],
+            "command": "node",
+            "disabled": false,
+            "env": {
+                "CONNECTION_TIMEOUT": "30000",
+                "DATABASE_URL": "postgresql://[UTILISATEUR]:[MOT_DE_PASSE]@[HOST]:[PORT]/[DATABASE]",
+                "DISABLE_DEBUG": "true",
+                "IDLE_TIMEOUT": "60000",
+                "MAX_CONNECTIONS": "20",
+                "MIN_CONNECTIONS": "1",
+                "POSTGRES_DB": "[DATABASE]",
+                "POSTGRES_HOST": "localhost",
+                "POSTGRES_PASSWORD": "[MOT_DE_PASSE]",
+                "POSTGRES_PORT": "5432",
+                "POSTGRES_USER": "[UTILISATEUR]",
+                "NO_COLOR": "1",
+                "FORCE_COLOR": "0"
+            }
+        },
+        "qdrant": {
+            "_comment": "Qdrant Vector Store - Embeddings 1536D for categorical search",
+            "args": [
+                "D:/mcp/qdrant-mcp-server/build/index.js"
+            ],
+            "command": "node",
+            "disabled": false,
+            "env": {
+                "DISABLE_DEBUG": "true",
+                "EMBEDDING_DIMENSIONS": "1536",
+                "EMBEDDING_PROVIDER": "llamacpp",
+                "LLAMACPP_MODEL_PATH": "D:/models/jina-code-embeddings-1.5b-Q8_0.gguf",
+                "INITIAL_CONNECTION_TIMEOUT": "60000",
+                "LOG_LEVEL": "error",
+                "QDRANT_API_KEY": "",
+                "QDRANT_URL": "http://localhost:6333",
+                "NO_COLOR": "1",
+                "FORCE_COLOR": "0"
+            }
+        },
+        "sequentialthinking": {
+            "command": "node",
+            "args": [
+                "D:/mcp/sequentialthinking/dist/index.js"
+            ]
+        },
+        "sqlite-node": {
+            "_comment": "SQLite multi-db - Unified cache with auto-purge",
+            "args": [
+                "D:/mcp/mcp-quick-sqlite3/dist/index.js"
+            ],
+            "command": "node",
+            "disabled": false,
+            "env": {
+                "CASCADE_DB_ROOT": "D:/mcp/data/",
+                "CACHE_TABLE": "cache_table",
+                "DEFAULT_DB_PATH": "D:/mcp/data/current_workspace/graph/memory_mcp.db",
+                "DISABLE_DEBUG": "true",
+                "LOG_LEVEL": "error",
+                "MEMORY_DB": "D:/mcp/data/current_workspace/graph/memory_mcp.db",
+                "N8N_MAIN_DB": "D:/mcp/n8n-mcp/data/nodes.db",
+                "N8N_TEMPLATES_DB": "D:/mcp/n8n-mcp/data/templates.db",
+                "ORCHESTRATOR_DB": "D:/mcp/orchestrator-server/data/orchestrator.db",
+                "TTL_HOURS": "1",
+                "NO_COLOR": "1",
+                "FORCE_COLOR": "0"
+            }
+        },
+        "zvec": {
+            "_comment": "Zvec Vector Store - Embeddings 384D for semantic search",
+            "args": [
+                "D:/mcp/Zvec/build/index.js"
+            ],
+            "command": "node",
+            "disabled": false,
+            "env": {
+                "CASCADE_DB_ROOT": "D:/mcp/data/",
+                "DISABLE_DEBUG": "true",
+                "EMBEDDING_DIMENSIONS": "384",
+                "EMBEDDING_PROVIDER": "local",
+                "LOG_LEVEL": "error",
+                "ZVEC_BACKEND": "hnsw",
+                "ZVEC_DATA_DIR": "D:/mcp/data/current_workspace/vector/zvec-data",
+                "ZVEC_DENSE_MODEL": "Xenova/all-MiniLM-L6-v2",
+                "NO_COLOR": "1",
+                "FORCE_COLOR": "0"
+            }
+        }
+    }
+}
